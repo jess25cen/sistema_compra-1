@@ -18,8 +18,8 @@ class UsuarioSession {
 
         //preparamos la sentencia a ser ejecutada ,ponemos en vez de todo menos FROM *
         // Only allow users with estado = 'ACTIVO'
-        $query = $db->conectar()->prepare("SELECT `cod_usuario`, `nombre_apellido`, 
-            `nick_name`, `password`, `estado`, `cod_rol`
+        $query = $db->conectar()->prepare("SELECT `id_usuario`, `nombre_usuario`, 
+            `nick_name`, `password`, `estado`, `id_rol`
             FROM `usuarios`
                 WHERE nick_name = :usuario and password = :pass AND estado = 'ACTIVO'"); //u.usuario y pass de base de datos
         //agregamos los valores a la consulta mediante la ayuda de un diccionario
@@ -28,11 +28,11 @@ class UsuarioSession {
         if ($query->rowCount()) {
 
             foreach ($query as $user) {
-                $_SESSION['cod_usuario'] = $user['cod_usuario'];
+                $_SESSION['id_usuario'] = $user['id_usuario'];
                 // Use consistent session keys across the app
-                $_SESSION['cod_usuario'] = $user['cod_usuario'];
-                $_SESSION['nombre_completo'] = $user['nombre_apellido'];
-                $_SESSION['cod_rol'] = $user['cod_rol'];
+                $_SESSION['id_usuario'] = $user['id_usuario'];
+                $_SESSION['nombre_completo'] = $user['nombre_usuario'];
+                $_SESSION['id_rol'] = $user['id_rol'];
 
                 return true;
             }
