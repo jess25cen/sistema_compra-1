@@ -1,12 +1,13 @@
 function mostrarListaCiudades() {
     let contenido = dameContenido("paginas/referenciales/ciudad/listar.php");
-    $(".contenido-principal").html(contenido);
+    // el contenedor principal usa id="contenido-principal" en la plantilla
+    $("#contenido-principal").html(contenido);
     cargarTablaCiudades();
 }
 
 function mostrarAgregarCiudad() {
     let contenido = dameContenido("paginas/referenciales/ciudad/agregar.php");
-    $(".contenido-principal").html(contenido);
+    $("#contenido-principal").html(contenido);
 }
 
 function guardarCiudad() {
@@ -86,7 +87,7 @@ $(document).on("click", ".editar-ciudad", function () {
     }
     let json_registro = JSON.parse(response);
     let contenido = dameContenido("paginas/referenciales/ciudad/agregar.php");
-    $(".contenido-principal").html(contenido);
+    $("#contenido-principal").html(contenido);
     $("#ciudad_form_titulo").text("Editar Ciudad");
     $("#id_ciudad").val(json_registro.id_ciudad);
     $("#ciudad_nombre").val(json_registro.nombre);

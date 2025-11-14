@@ -150,102 +150,15 @@
               </a>
             </li>
 
-            <!-- Layouts -->
-            
-
             <li class="menu-header small text-uppercase">
               <span class="menu-header-text">Referenciales</span>
             </li>
-<!--            <li class="menu-item">
-              <a href="#" onclick="mostrarListaAlumnos(); return false;" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-user"></i>
-                <div data-i18n="">Alumnos</div>
-              </a>
-            </li>-->
             <li class="menu-item">
               <a href="#" onclick="mostrarListaCiudades(); return false;" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-map"></i>
                 <div data-i18n="">Ciudades</div>
               </a>
             </li>
-            <li class="menu-item">
-              <a href="#" onclick="mostrarListaDocentesGestion(); return false;" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-chalkboard"></i>
-                <div data-i18n="">Docentes</div>
-              </a>
-            </li>
-            <li class="menu-item">
-              <a href="#" onclick="mostrarListaAsignaturas(); return false;" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-book"></i>
-                <div data-i18n="">Asignaturas</div>
-              </a>
-            </li>
-            <li class="menu-item">
-              <a href="#" onclick="mostrarListaGrados(); return false;" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-layer"></i>
-                <div data-i18n="">Grados</div>
-              </a>
-            </li>
-            <li class="menu-item">
-              <a href="#" onclick="mostrarListaBachilleratos(); return false;" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-book-open"></i>
-                <div data-i18n="">Bachilleratos</div>
-              </a>
-            </li>
-            <li class="menu-item">
-              <a href="#" onclick="mostrarListaAulas(); return false;" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-building"></i>
-                <div data-i18n="">Aulas</div>
-              </a>
-            </li>
-            <li class="menu-header small text-uppercase">
-              <span class="menu-header-text">Gestión Acádemica</span>
-            </li>
-            <li class="menu-item">
-              <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-dock-top"></i>
-                <div data-i18n="Account Settings">Acádemico</div>
-              </a>
-              <ul class="menu-sub">
-                <li class="menu-item">
-                    <a href="#" onclick="mostrarListaMallaCurricular(); return false;" class="menu-link">
-                    <div data-i18n="">Malla Curricular</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#" onclick="mostrarListaPlanificacionAcademica(); return false;" class="menu-link">
-                    <div data-i18n="">Planificación Académica</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#" onclick="mostrarListaPlanificacionCurso(); return false;" class="menu-link">
-                    <div data-i18n="">Planificación de Cursos</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#" onclick="mostrarListaPlanificacionHorario(); return false;" class="menu-link">
-                    <div data-i18n="">Planificación de Horarios</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="#" onclick="mostrarListaPlanificacionExamen(); return false;" class="menu-link">
-                    <div data-i18n="">Planificación de Exámenes</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="#" onclick="mostrarListaRequisitoInscripcion(); return false;" class="menu-link">
-                    <div data-i18n="">Requisitos de Inscripción</div>
-                  </a>
-                </li>                
-              </ul>
-            </li>
-            <li class="menu-item">
-              <a href="#" onclick="mostrarMenuInformes(); return false;" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-file"></i>
-                <div data-i18n="">Informes</div>
-              </a>
-            </li>
-
           </ul>
         </aside>
         <!-- / Menu -->
