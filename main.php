@@ -165,6 +165,12 @@
                 <div data-i18n="">Proveedores</div>
               </a>
             </li>
+            <li class="menu-item">
+              <a href="#" onclick="mostrarListaUsuarios(); return false;" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-user"></i>
+                <div data-i18n="">Usuarios</div>
+              </a>
+            </li>
           </ul>
         </aside>
         <!-- / Menu -->
@@ -349,6 +355,7 @@
     <script src="vista/util.js"></script>
   <script src="vista/ciudad.js"></script>
     <script src="vista/proveedor.js"></script>
+    <script src="vista/usuario.js"></script>
     <script src="vista/alumnos.js"></script>
     <script src="vista/informes.js"></script>
     <script src="vista/bachilleratos.js"></script>
