@@ -201,6 +201,23 @@
                 <div data-i18n="">Roles</div>
               </a>
             </li>
+
+            <li class="menu-header small text-uppercase">
+              <span class="menu-header-text">Compras</span>
+            </li>
+            <li class="menu-item">
+              <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-cart"></i>
+                <div data-i18n="">Compras</div>
+              </a>
+              <ul class="menu-sub">
+                <li class="menu-item">
+                  <a href="#" onclick="mostrarListaPedidosCompra(); return false;" class="menu-link">
+                    <div data-i18n="">Pedido Compras</div>
+                  </a>
+                </li>
+              </ul>
+            </li>
           </ul>
         </aside>
         <!-- / Menu -->
@@ -391,6 +408,7 @@
     <script src="vista/tipo_producto.js"></script>
     <script src="vista/stock.js"></script>
     <script src="vista/rol.js"></script>
+    <script src="vista/pedido_compra.js"></script>
     <script src="vista/alumnos.js"></script>
     <script src="vista/informes.js"></script>
     <script src="vista/bachilleratos.js"></script>
