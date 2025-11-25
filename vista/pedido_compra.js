@@ -317,25 +317,3 @@ $(document).on("keyup", "#b_pedido_compra", function () {
     $("#pedidos_compra_tb").html(fila);
     feather.replace();
 });
-
-// Exponer funciones en el scope global por si el onclick inline las busca
-if (typeof window !== 'undefined') {
-    window.mostrarListaPedidosCompra = mostrarListaPedidosCompra;
-    window.mostrarAgregarPedidoCompra = mostrarAgregarPedidoCompra;
-    window.guardarPedidoCompra = guardarPedidoCompra;
-    window.cancelarPedidoCompra = cancelarPedidoCompra;
-}
-
-// Procesar cualquier llamada encolada que ocurrió antes de cargar este script
-if (window.__pc_queue && Array.isArray(window.__pc_queue) && window.__pc_queue.length) {
-    window.__pc_queue.forEach(function(item){
-        try {
-            if (typeof window[item.fn] === 'function') {
-                window[item.fn].apply(null, item.args);
-            }
-        } catch (e) {
-            console.error('Error procesando cola:', e);
-        }
-    });
-    window.__pc_queue = [];
-}
