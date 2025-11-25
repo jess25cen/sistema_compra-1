@@ -394,6 +394,18 @@ function ejecutarAjaxERROR(url, data, mensaje_error, mensaje_correcto) {
     return resultado;
 }
 
+// Helper para parsear respuestas que pueden venir como string JSON o ya como objeto
+function parseJSONSafe(datos) {
+    if (typeof datos === 'string') {
+        try {
+            return JSON.parse(datos);
+        } catch (e) {
+            return datos;
+        }
+    }
+    return datos;
+}
+
 var modalConfirm;
 
 function mensaje_confirmacion(mensaje, titulo) {

@@ -71,20 +71,20 @@ function guardarOrdenCompra() {
     let respuesta_cabecera = ejecutarAjax("controladores/orden_compra.php", "guardar=" + JSON.stringify(cabecera));
     
     try {
-        let json_cabecera = JSON.parse(respuesta_cabecera);
+        let json_cabecera = parseJSONSafe(respuesta_cabecera);
         
         if (json_cabecera.error) {
-            mensaje_dialogo_info_ERROR(json_cabecera.error, "Error al guardar orden");
+            mensaje_dialogo_info_ERROR(json_cabecera.error, "Error al guardar orden de compra");
             return;
         }
         
-        if (!json_cabecera.success || !json_cabecera.id_orden) {
-            mensaje_dialogo_info_ERROR("No se generó ID para la orden", "Error");
+        if (!json_cabecera.success || !json_cabecera.id_orden_compra) {
+            mensaje_dialogo_info_ERROR("No se generó ID para la orden de compra", "Error");
             return;
         }
         
-        let id_orden = json_cabecera.id_orden;
-        console.log("CABECERA -> ID Orden: " + id_orden);
+        let id_orden_compra = json_cabecera.id_orden_compra;
+        console.log("CABECERA -> ID Orden Compra: " + id_orden_compra);
         
         $("#detalles_orden_tb tr").each(function() {
             let id_producto = $(this).find(".producto_id").val();
@@ -92,17 +92,17 @@ function guardarOrdenCompra() {
             
             if (id_producto && cantidad) {
                 let detalle = {
-                    orden_compra: id_orden,
+                    orden_compra: id_orden_compra,
                     id_productos: id_producto,
                     cantidad: cantidad
                 };
                 
                 let respuesta_detalle = ejecutarAjax("controladores/detalle_orden.php", "guardar=" + JSON.stringify(detalle));
                 console.log("DETALLE -> " + respuesta_detalle);
-                
+
                 try {
-                    let json_detalle = JSON.parse(respuesta_detalle);
-                    if (json_detalle.error) {
+                    let json_detalle = parseJSONSafe(respuesta_detalle);
+                    if (json_detalle && json_detalle.error) {
                         console.error("Error en detalle:", json_detalle.error);
                     }
                 } catch (e) {
@@ -111,7 +111,7 @@ function guardarOrdenCompra() {
             }
         });
         
-        mensaje_confirmacion("Orden guardada correctamente", "Éxito");
+        mensaje_confirmacion("Orden de compra guardada correctamente", "Éxito");
         mostrarListaOrdenesCompra();
         
     } catch (e) {
@@ -130,8 +130,11 @@ function cargarTablaOrdenesCompra() {
     if (datos === "0") {
         fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
     } else {
-        let json_datos = JSON.parse(datos);
-        json_datos.map(function (item) {
+        let json_datos = parseJSONSafe(datos);
+        if (json_datos === "0") {
+            fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
+        } else {
+            json_datos.map(function (item) {
             fila += `<tr>`;
             fila += `<td>${item.orden_compra}</td>`;
             fila += `<td>${item.fecha_orden}</td>`;
@@ -145,7 +148,8 @@ function cargarTablaOrdenesCompra() {
             }
             fila += `</td>`;
             fila += `</tr>`;
-        });
+            });
+        }
     }
     $("#ordenes_compra_tb").html(fila);
     feather.replace();
@@ -156,15 +160,15 @@ $(document).on("click", ".ver-detalles-orden", function () {
     let datos = ejecutarAjax("controladores/orden_compra.php", "obtener_detalles=" + id);
     
     if (datos === "0") {
-        mensaje_dialogo_info_ERROR("No hay detalles para esta orden", "Información");
+        mensaje_dialogo_info_ERROR("No hay detalles para esta orden de compra", "Información");
         return;
     }
     
-    let json_datos = JSON.parse(datos);
-    let detalles_html = "<table class='table table-sm'><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th></tr></thead><tbody>";
+    let json_datos = parseJSONSafe(datos);
+    let detalles_html = "<table class='table table-sm'><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>";
     
     json_datos.forEach(function(item) {
-        detalles_html += `<tr><td>${item.nombre_producto}</td><td>${item.cantidad}</td><td>${item.precio}</td></tr>`;
+        detalles_html += `<tr><td>${item.nombre_producto}</td><td>${item.cantidad}</td></tr>`;
     });
     
     detalles_html += "</tbody></table>";
@@ -180,7 +184,7 @@ $(document).on("click", ".ver-detalles-orden", function () {
 $(document).on("click", ".anular-orden", function () {
     let id = $(this).data("id");
     Swal.fire({
-        title: 'Anular Orden?',
+        title: 'Anular Orden de Compra?',
         text: "¿Desea anular esta orden de compra?",
         icon: 'warning',
         showCancelButton: true,
@@ -191,7 +195,7 @@ $(document).on("click", ".anular-orden", function () {
     }).then((result) => {
         if (result.isConfirmed) {
             ejecutarAjax("controladores/orden_compra.php", "anular=" + id);
-            mensaje_confirmacion("Orden anulada correctamente", "Éxito");
+            mensaje_confirmacion("Orden de compra anulada correctamente", "Éxito");
             cargarTablaOrdenesCompra();
         }
     });
@@ -221,8 +225,11 @@ $(document).on("keyup", "#b_orden_compra", function () {
     if (datos === "0") {
         fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
     } else {
-        let json_datos = JSON.parse(datos);
-        json_datos.map(function (item) {
+        let json_datos = parseJSONSafe(datos);
+        if (json_datos === "0") {
+            fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
+        } else {
+            json_datos.map(function (item) {
             fila += `<tr>`;
             fila += `<td>${item.orden_compra}</td>`;
             fila += `<td>${item.fecha_orden}</td>`;
@@ -236,7 +243,8 @@ $(document).on("keyup", "#b_orden_compra", function () {
             }
             fila += `</td>`;
             fila += `</tr>`;
-        });
+            });
+        }
     }
     $("#ordenes_compra_tb").html(fila);
     feather.replace();

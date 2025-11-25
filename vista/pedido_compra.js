@@ -1,8 +1,11 @@
 function mostrarListaPedidosCompra() {
     let contenido = dameContenido("paginas/movimientos/pedido_compra/listar.php");
-    $("#contenido-principal").html(contenido);
+    $(".contenido-principal").html(contenido);
     cargarTablaPedidosCompra();
 }
+
+
+
 
 function mostrarAgregarPedidoCompra() {
     let contenido = dameContenido("paginas/movimientos/pedido_compra/agregar.php");
@@ -68,16 +71,15 @@ function guardarPedidoCompra() {
     
     // Cabecera del pedido
     let cabecera = {
-        fecha_compra: $("#pedido_compra_fecha").val(),
-        id_usuario: $("#pedido_compra_usuario").val(),
+        fecha_compra: $("#pedido_compra_fecha").val(),        id_usuario: $("#pedido_compra_usuario").val(),
         estado: 'ACTIVO'
     };
     
     // Guardar la cabecera primero
     let respuesta_cabecera = ejecutarAjax("controladores/pedido_compra.php", "guardar=" + JSON.stringify(cabecera));
-    
+
     try {
-        let json_cabecera = JSON.parse(respuesta_cabecera);
+        let json_cabecera = parseJSONSafe(respuesta_cabecera);
         
         if (json_cabecera.error) {
             mensaje_dialogo_info_ERROR(json_cabecera.error, "Error al guardar pedido");
@@ -106,10 +108,10 @@ function guardarPedidoCompra() {
                 
                 let respuesta_detalle = ejecutarAjax("controladores/detalle_pedido.php", "guardar=" + JSON.stringify(detalle));
                 console.log("DETALLE -> " + respuesta_detalle);
-                
+
                 try {
-                    let json_detalle = JSON.parse(respuesta_detalle);
-                    if (json_detalle.error) {
+                    let json_detalle = parseJSONSafe(respuesta_detalle);
+                    if (json_detalle && json_detalle.error) {
                         console.error("Error en detalle:", json_detalle.error);
                     }
                 } catch (e) {
@@ -137,8 +139,11 @@ function cargarTablaPedidosCompra() {
     if (datos === "0") {
         fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
     } else {
-        let json_datos = JSON.parse(datos);
-        json_datos.map(function (item) {
+        let json_datos = parseJSONSafe(datos);
+        if (json_datos === "0") {
+            fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
+        } else {
+            json_datos.map(function (item) {
             fila += `<tr>`;
             fila += `<td>${item.pedido_compra}</td>`;
             fila += `<td>${item.fecha_compra}</td>`;
@@ -168,7 +173,7 @@ $(document).on("click", ".ver-detalles-pedido", function () {
         return;
     }
     
-    let json_datos = JSON.parse(datos);
+    let json_datos = parseJSONSafe(datos);
     let detalles_html = "<table class='table table-sm'><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th></tr></thead><tbody>";
     
     json_datos.forEach(function(item) {
@@ -230,7 +235,7 @@ function crearComparadorDesdePedido(id_pedido) {
     }
 
     try {
-        let detalles = JSON.parse(datos);
+        let detalles = parseJSONSafe(datos);
 
         // Cargar la vista del comparador
         let contenido = dameContenido("paginas/movimientos/comparador_presupuesto/agregar.php");
@@ -287,24 +292,50 @@ $(document).on("keyup", "#b_pedido_compra", function () {
     if (datos === "0") {
         fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
     } else {
-        let json_datos = JSON.parse(datos);
-        json_datos.map(function (item) {
-            fila += `<tr>`;
-            fila += `<td>${item.pedido_compra}</td>`;
-            fila += `<td>${item.fecha_compra}</td>`;
-            fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
-            fila += `<td><span class="badge bg-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
-            fila += `<td class='text-end'>`;
-            fila += `<button class='btn btn-info btn-sm ver-detalles-pedido' data-id='${item.pedido_compra}'><i data-feather="eye"></i></button> `;
-            fila += `<button class='btn btn-warning btn-sm imprimir-pedido' data-id='${item.pedido_compra}'><i data-feather="printer"></i></button> `;
-            fila += `<button class='btn btn-primary btn-sm crear-comparador' data-id='${item.pedido_compra}'>Comparador</button> `;
-            if (item.estado === "ACTIVO") {
-                fila += `<button class='btn btn-danger btn-sm anular-pedido' data-id='${item.pedido_compra}'><i data-feather="x-circle"></i></button>`;
-            }
-            fila += `</td>`;
-            fila += `</tr>`;
-        });
+        let json_datos = parseJSONSafe(datos);
+        if (json_datos === "0") {
+            fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
+        } else {
+            json_datos.map(function (item) {
+                fila += `<tr>`;
+                fila += `<td>${item.pedido_compra}</td>`;
+                fila += `<td>${item.fecha_compra}</td>`;
+                fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
+                fila += `<td><span class="badge bg-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
+                fila += `<td class='text-end'>`;
+                fila += `<button class='btn btn-info btn-sm ver-detalles-pedido' data-id='${item.pedido_compra}'><i data-feather="eye"></i></button> `;
+                fila += `<button class='btn btn-warning btn-sm imprimir-pedido' data-id='${item.pedido_compra}'><i data-feather="printer"></i></button> `;
+                fila += `<button class='btn btn-primary btn-sm crear-comparador' data-id='${item.pedido_compra}'>Comparador</button> `;
+                if (item.estado === "ACTIVO") {
+                    fila += `<button class='btn btn-danger btn-sm anular-pedido' data-id='${item.pedido_compra}'><i data-feather="x-circle"></i></button>`;
+                }
+                fila += `</td>`;
+                fila += `</tr>`;
+            });
+        }
     }
     $("#pedidos_compra_tb").html(fila);
     feather.replace();
 });
+
+// Exponer funciones en el scope global por si el onclick inline las busca
+if (typeof window !== 'undefined') {
+    window.mostrarListaPedidosCompra = mostrarListaPedidosCompra;
+    window.mostrarAgregarPedidoCompra = mostrarAgregarPedidoCompra;
+    window.guardarPedidoCompra = guardarPedidoCompra;
+    window.cancelarPedidoCompra = cancelarPedidoCompra;
+}
+
+// Procesar cualquier llamada encolada que ocurrió antes de cargar este script
+if (window.__pc_queue && Array.isArray(window.__pc_queue) && window.__pc_queue.length) {
+    window.__pc_queue.forEach(function(item){
+        try {
+            if (typeof window[item.fn] === 'function') {
+                window[item.fn].apply(null, item.args);
+            }
+        } catch (e) {
+            console.error('Error procesando cola:', e);
+        }
+    });
+    window.__pc_queue = [];
+}
