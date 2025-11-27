@@ -211,25 +211,6 @@
                 <div data-i18n="">Compras</div>
               </a>
               <ul class="menu-sub">
-                <script>
-                  // Cola ligera para llamadas a funciones de Pedido/Compras
-                  window.__pc_queue = window.__pc_queue || [];
-                  function __pc_enqueue(fnName, args){
-                    window.__pc_queue.push({fn: fnName, args: Array.prototype.slice.call(args)});
-                  }
-                  if (typeof window.mostrarListaPedidosCompra !== 'function') {
-                    window.mostrarListaPedidosCompra = function(){ __pc_enqueue('mostrarListaPedidosCompra', arguments); };
-                  }
-                  if (typeof window.mostrarListaPresupuestos !== 'function') {
-                    window.mostrarListaPresupuestos = function(){ __pc_enqueue('mostrarListaPresupuestos', arguments); };
-                  }
-                  if (typeof window.mostrarListaOrdenesCompra !== 'function') {
-                    window.mostrarListaOrdenesCompra = function(){ __pc_enqueue('mostrarListaOrdenesCompra', arguments); };
-                  }
-                  if (typeof window.mostrarListaFacturaCompras !== 'function') {
-                    window.mostrarListaFacturaCompras = function(){ __pc_enqueue('mostrarListaFacturaCompras', arguments); };
-                  }
-                </script>
                 <li class="menu-item">
                   <a href="#" onclick="mostrarListaPedidosCompra(); return false;" class="menu-link">
                     <div data-i18n="">Pedido Compra</div>
@@ -449,8 +430,8 @@
     <script src="vista/rol.js"></script>
     <script src="vista/presupuesto.js"></script>
     <script src="vista/orden_compra.js"></script>
+    <script src="vista/pedido_compra.js"></script>
     <script src="vista/alumnos.js"></script>
-      <script src="vista/pedido_compra.js"></script>
     <script src="vista/informes.js"></script>
     <script src="vista/bachilleratos.js"></script>
     <script src="vista/malla_curricular.js"></script>

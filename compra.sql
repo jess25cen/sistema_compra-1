@@ -104,10 +104,11 @@ CREATE TABLE `detalle_orden` (
 --
 
 CREATE TABLE `detalle_pedido` (
-  `id_detalle_pedido` int(11) NOT NULL,
+  `id_detalle_pedido` int(11) NOT NULL AUTO_INCREMENT,
   `cantidad` int(11) NOT NULL,
   `pedido_compra` int(11) NOT NULL,
-  `id_productos` int(11) NOT NULL
+  `id_productos` int(11) NOT NULL,
+  PRIMARY KEY (`id_detalle_pedido`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -165,10 +166,11 @@ CREATE TABLE `orden_compra` (
 --
 
 CREATE TABLE `pedido_compra` (
-  `pedido_compra` int(11) NOT NULL,
+  `pedido_compra` int(11) NOT NULL AUTO_INCREMENT,
   `fecha_compra` date NOT NULL,
   `estado` varchar(10) NOT NULL,
-  `id_usuario` int(11) NOT NULL
+  `id_usuario` int(11) NOT NULL,
+  PRIMARY KEY (`pedido_compra`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
