@@ -11,9 +11,8 @@
         </div>
         <div class="col-md-3">
           <label class="form-label">Usuario <span class="text-danger">*</span></label>
-          <select id="presupuesto_usuario" class="form-select" required>
-            <option value="0">-- Seleccionar --</option>
-          </select>
+          <input type="text" id="presupuesto_usuario" class="form-control" readonly>
+          <input type="hidden" id="id_usuario_presupuesto">
         </div>
         <div class="col-md-3">
           <label class="form-label">Proveedor <span class="text-danger">*</span></label>
@@ -22,8 +21,10 @@
           </select>
         </div>
         <div class="col-md-3">
-          <label class="form-label">Orden de Compra</label>
-          <input type="number" id="presupuesto_orden_compra" class="form-control" min="0">
+          <label class="form-label">Pedido de Compra</label>
+          <select id="presupuesto_pedido_compra" class="form-select" onchange="cargarDetallesPedidoCompra()">
+            <option value="0">-- Seleccionar --</option>
+          </select>
         </div>
       </div>
 
@@ -103,41 +104,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Cargar usuarios
-  let usuarios = ejecutarAjax("controladores/usuario.php", "listar=1");
-  if (usuarios !== "0") {
-    let json_usuarios = JSON.parse(usuarios);
-    json_usuarios.map(function(item) {
-      $("#presupuesto_usuario").append(`<option value="${item.id_usuarios}">${item.nombre}</option>`);
-    });
-  }
-
-  // Cargar proveedores
-  let proveedores = ejecutarAjax("controladores/proveedor.php", "listar=1");
-  if (proveedores !== "0") {
-    let json_proveedores = JSON.parse(proveedores);
-    json_proveedores.map(function(item) {
-      $("#presupuesto_proveedor").append(`<option value="${item.id_proveedor}">${item.nombre}</option>`);
-    });
-  }
-
-  // Cargar productos
-  let productos = ejecutarAjax("controladores/producto.php", "listar=1");
-  if (productos !== "0") {
-    let json_productos = JSON.parse(productos);
-    json_productos.map(function(item) {
-      $("#presupuesto_producto").append(`<option value="${item.id_productos}" data-precio="${item.precio}">${item.nombre}</option>`);
-    });
-  }
-
-  // Actualizar precio cuando se selecciona producto
-  $("#presupuesto_producto").on("change", function() {
-    let precio = $(this).find("option:selected").data("precio");
-    $("#presupuesto_precio").val(precio || 0);
-  });
-
   // Establecer fecha de hoy
   let hoy = new Date().toISOString().split('T')[0];
   $("#presupuesto_fecha").val(hoy);
+
+  // Obtener usuario de sesión (no cargable desde JS, se maneja desde presupuesto.js)
+  // Los campos se llenan desde mostrarAgregarPresupuesto()
 });
 </script>

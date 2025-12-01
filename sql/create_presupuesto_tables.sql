@@ -1,28 +1,25 @@
--- Crear tabla presupuesto (compatible con orden_compra)
+-- Crear tabla presupuesto (con relaciones a pedido_compra y proveedor)
 CREATE TABLE IF NOT EXISTS `presupuesto` (
-  `id_presupuesto` int NOT NULL AUTO_INCREMENT,
-  `fecha` date NOT NULL,
-  `id_usuario` int NOT NULL,
-  `id_proveedor` int NOT NULL,
-  `estado` varchar(20) NOT NULL DEFAULT 'ACTIVO',
-  `id_orden_compra` int,
-  `fecha_creacion` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id_presupuesto` int(11) NOT NULL AUTO_INCREMENT,
+  `fecha_presupuesto` date NOT NULL,
+  `estado` varchar(10) NOT NULL DEFAULT 'ACTIVO',
+  `id_usuario` int(11) NOT NULL,
+  `pedido_compra` int(11),
+  `id_proveedor` int(11),
   PRIMARY KEY (`id_presupuesto`),
   KEY `id_usuario` (`id_usuario`),
+  KEY `pedido_compra` (`pedido_compra`),
   KEY `id_proveedor` (`id_proveedor`),
-  KEY `id_orden_compra` (`id_orden_compra`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  CONSTRAINT `fk_presupuesto_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`),
+  CONSTRAINT `fk_presupuesto_pedido` FOREIGN KEY (`pedido_compra`) REFERENCES `pedido_compra` (`pedido_compra`),
+  CONSTRAINT `fk_presupuesto_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedor` (`id_proveedor`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Crear tabla detalle_presupuesto
 CREATE TABLE IF NOT EXISTS `detalle_presupuesto` (
-  `id_detalle_presupuesto` int NOT NULL AUTO_INCREMENT,
-  `id_presupuesto` int NOT NULL,
-  `id_productos` int NOT NULL,
-  `cantidad` int NOT NULL DEFAULT '0',
-  `precio_unitario` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `subtotal` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `fecha_creacion` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_detalle_presupuesto`),
-  KEY `id_presupuesto` (`id_presupuesto`),
-  KEY `id_productos` (`id_productos`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `id_detalle_presupuesto` int(11) NOT NULL AUTO_INCREMENT,
+  `cantidad` int(11) NOT NULL,
+  `id_presupuesto` int(11) NOT NULL,
+  `id_productos` int(11) NOT NULL,
+  PRIMARY KEY (`id_detalle_presupuesto`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

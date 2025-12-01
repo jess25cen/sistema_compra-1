@@ -7,6 +7,137 @@ function mostrarListaPresupuestos() {
 function mostrarAgregarPresupuesto() {
     let contenido = dameContenido("paginas/movimientos/presupuesto/agregar.php");
     $("#contenido-principal").html(contenido);
+    
+    // Obtener usuario de sesión
+    let respuesta = ejecutarAjax("controladores/usuarioSession.php", "obtener=1");
+    try {
+        let json_usuario = typeof respuesta === 'string' ? JSON.parse(respuesta) : respuesta;
+        if (json_usuario && json_usuario.id_usuario) {
+            $("#presupuesto_usuario").val(json_usuario.nombre_usuario || json_usuario.nombre_completo || 'Usuario');
+            $("#id_usuario_presupuesto").val(json_usuario.id_usuario);
+        }
+    } catch (error) {
+        console.error('Error al obtener usuario de sesión:', error);
+    }
+    
+    cargarListaPedidosCompra();
+    cargarListaProveedores();
+    cargarListaProductosPresupuesto();
+}
+
+function cargarListaPedidosCompra() {
+    let pedidos = ejecutarAjax("controladores/pedido_compra.php", "listar=1");
+    
+    try {
+        // Manejar tanto strings JSON como objetos ya parseados
+        let json_pedidos = typeof pedidos === 'string' ? JSON.parse(pedidos) : pedidos;
+        
+        if (!Array.isArray(json_pedidos)) {
+            json_pedidos = [];
+        }
+        
+        // Limpiar opciones previas excepto la opción por defecto
+        $("#presupuesto_pedido_compra").find("option:not(:first)").remove();
+        
+        json_pedidos.forEach(function(item) {
+            $("#presupuesto_pedido_compra").append(`<option value="${item.pedido_compra}">Pedido #${item.pedido_compra} - ${item.fecha_compra}</option>`);
+        });
+    } catch (error) {
+        console.error('Error al cargar pedidos compra:', error);
+    }
+}
+
+function cargarListaProveedores() {
+    let proveedores = ejecutarAjax("controladores/proveedor.php", "listar=1");
+    
+    try {
+        // Manejar tanto strings JSON como objetos ya parseados
+        let json_proveedores = typeof proveedores === 'string' ? JSON.parse(proveedores) : proveedores;
+        
+        if (!Array.isArray(json_proveedores)) {
+            json_proveedores = [];
+        }
+        
+        // Limpiar opciones previas excepto la opción por defecto
+        $("#presupuesto_proveedor").find("option:not(:first)").remove();
+        
+        json_proveedores.forEach(function(item) {
+            $("#presupuesto_proveedor").append(`<option value="${item.id_proveedor}">${item.nombre}</option>`);
+        });
+    } catch (error) {
+        console.error('Error al cargar proveedores:', error);
+    }
+}
+
+function cargarListaProductosPresupuesto() {
+    let productos = ejecutarAjax("controladores/producto.php", "listar=1");
+    
+    try {
+        // Manejar tanto strings JSON como objetos ya parseados
+        let json_productos = typeof productos === 'string' ? JSON.parse(productos) : productos;
+        
+        if (!Array.isArray(json_productos)) {
+            json_productos = [];
+        }
+        
+        // Limpiar opciones previas excepto la opción por defecto
+        $("#presupuesto_producto").find("option:not(:first)").remove();
+        
+        json_productos.forEach(function(item) {
+            $("#presupuesto_producto").append(`<option value="${item.id_productos}">${item.nombre_producto}</option>`);
+        });
+    } catch (error) {
+        console.error('Error al cargar productos:', error);
+    }
+}
+
+function cargarDetallesPedidoCompra() {
+    let pedido_id = $("#presupuesto_pedido_compra").val();
+    
+    if (pedido_id === "0" || pedido_id.trim().length === 0) {
+        // Limpiar tabla de detalles si no hay pedido seleccionado
+        $("#detalles_presupuesto_tb").html("");
+        return;
+    }
+    
+    // Obtener detalles del pedido compra
+    let detalles = ejecutarAjax("controladores/pedido_compra.php", "obtener_detalles=" + pedido_id);
+    
+    try {
+        // Manejar tanto strings JSON como objetos ya parseados
+        let json_detalles = typeof detalles === 'string' ? JSON.parse(detalles) : detalles;
+        
+        if (!Array.isArray(json_detalles) || json_detalles.length === 0) {
+            mensaje_dialogo_info_ERROR("No hay detalles para este pedido", "Información");
+            $("#detalles_presupuesto_tb").html("");
+            return;
+        }
+        
+        // Limpiar tabla y cargar detalles
+        $("#detalles_presupuesto_tb").html("");
+        let contador = 1;
+        
+        json_detalles.forEach(function(item) {
+            let fila = `<tr>`;
+            fila += `<td><input type="hidden" class="producto_id" value="${item.id_productos}">${item.nombre_producto}</td>`;
+            fila += `<td><input type="hidden" class="producto_cantidad" value="${item.cantidad}">${item.cantidad}</td>`;
+            fila += `<td><input type="hidden" class="producto_precio" value="0">0.00</td>`;
+            fila += `<td><input type="hidden" class="producto_subtotal" value="0">0.00</td>`;
+            fila += `<td class='text-end'>`;
+            fila += `<button class='btn btn-danger btn-sm eliminar-detalle-presupuesto-btn' type="button"><i data-feather="trash-2"></i></button>`;
+            fila += `</td>`;
+            fila += `</tr>`;
+            
+            $("#detalles_presupuesto_tb").append(fila);
+            contador++;
+        });
+        
+        feather.replace();
+        calcularTotalPresupuesto();
+    } catch (error) {
+        console.error('Error al cargar detalles:', error);
+        mensaje_dialogo_info_ERROR("Error al cargar detalles del pedido", "Error");
+    }
 }
 
 function agregarDetallePresupuesto() {
@@ -65,8 +196,8 @@ function calcularTotalPresupuesto() {
 }
 
 function guardarPresupuesto() {
-    if ($("#presupuesto_usuario").val() === "0") {
-        mensaje_dialogo_info_ERROR("Debes seleccionar un usuario", "ATENCIÓN");
+    if (!$("#id_usuario_presupuesto").val()) {
+        mensaje_dialogo_info_ERROR("Usuario no cargado", "ATENCIÓN");
         return;
     }
     
@@ -83,8 +214,7 @@ function guardarPresupuesto() {
         if (id_producto && cantidad && precio) {
             detalles.push({
                 id_productos: id_producto,
-                cantidad: cantidad,
-                precio_unitario: precio
+                cantidad: cantidad
             });
         }
     });
@@ -95,17 +225,18 @@ function guardarPresupuesto() {
     }
     
     let cabecera = {
-        fecha: $("#presupuesto_fecha").val(),
-        id_usuario: $("#presupuesto_usuario").val(),
+        fecha_presupuesto: $("#presupuesto_fecha").val(),
+        id_usuario: $("#id_usuario_presupuesto").val(),
         id_proveedor: $("#presupuesto_proveedor").val(),
         estado: 'ACTIVO',
-        id_orden_compra: $("#presupuesto_orden_compra").val() || null
+        pedido_compra: $("#presupuesto_pedido_compra").val() || null
     };
     
     let respuesta_cabecera = ejecutarAjax("controladores/presupuesto.php", "guardar=" + JSON.stringify(cabecera));
     
     try {
-        let json_cabecera = JSON.parse(respuesta_cabecera);
+        // Manejar tanto strings JSON como objetos ya parseados
+        let json_cabecera = typeof respuesta_cabecera === 'string' ? JSON.parse(respuesta_cabecera) : respuesta_cabecera;
         
         if (json_cabecera.error) {
             mensaje_dialogo_info_ERROR(json_cabecera.error, "Error al guardar presupuesto");
@@ -123,21 +254,20 @@ function guardarPresupuesto() {
         $("#detalles_presupuesto_tb tr").each(function() {
             let id_producto = $(this).find(".producto_id").val();
             let cantidad = $(this).find(".producto_cantidad").val();
-            let precio = $(this).find(".producto_precio").val();
             
-            if (id_producto && cantidad && precio) {
+            if (id_producto && cantidad) {
                 let detalle = {
                     id_presupuesto: id_presupuesto,
                     id_productos: id_producto,
-                    cantidad: cantidad,
-                    precio_unitario: precio
+                    cantidad: cantidad
                 };
                 
                 let respuesta_detalle = ejecutarAjax("controladores/detalle_presupuesto.php", "guardar=" + JSON.stringify(detalle));
                 console.log("DETALLE -> " + respuesta_detalle);
                 
                 try {
-                    let json_detalle = JSON.parse(respuesta_detalle);
+                    // Manejar tanto strings JSON como objetos ya parseados
+                    let json_detalle = typeof respuesta_detalle === 'string' ? JSON.parse(respuesta_detalle) : respuesta_detalle;
                     if (json_detalle.error) {
                         console.error("Error en detalle:", json_detalle.error);
                     }
@@ -164,28 +294,38 @@ $(document).on("click", ".eliminar-detalle-presupuesto-btn", function () {
 function cargarTablaPresupuestos() {
     let datos = ejecutarAjax("controladores/presupuesto.php", "listar=1");
     let fila = "";
-    if (datos === "0") {
-        fila = `<tr><td colspan='7' class='text-center'>No hay registros</td></tr>`;
-    } else {
-        let json_datos = JSON.parse(datos);
-        json_datos.map(function (item) {
-            fila += `<tr>`;
-            fila += `<td>${item.id_presupuesto}</td>`;
-            fila += `<td>${item.fecha}</td>`;
-            fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
-            fila += `<td>${item.nombre_proveedor ? item.nombre_proveedor : ''}</td>`;
-            fila += `<td><span class="badge bg-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
-            fila += `<td>${item.id_orden_compra ? item.id_orden_compra : '-'}</td>`;
-            fila += `<td class='text-end'>`;
-            fila += `<button class='btn btn-info btn-sm ver-detalles-presupuesto' data-id='${item.id_presupuesto}'><i data-feather="eye"></i></button> `;
-            fila += `<button class='btn btn-warning btn-sm imprimir-presupuesto' data-id='${item.id_presupuesto}'><i data-feather="printer"></i></button> `;
-            if (item.estado === "ACTIVO") {
-                fila += `<button class='btn btn-danger btn-sm anular-presupuesto' data-id='${item.id_presupuesto}'><i data-feather="x-circle"></i></button>`;
-            }
-            fila += `</td>`;
-            fila += `</tr>`;
-        });
+    
+    try {
+        // Manejar tanto strings JSON como objetos ya parseados
+        let json_datos = typeof datos === 'string' ? JSON.parse(datos) : datos;
+        
+        // Validar que sea un array y que tenga datos
+        if (!Array.isArray(json_datos) || json_datos.length === 0) {
+            fila = `<tr><td colspan='7' class='text-center text-muted'>No hay registros</td></tr>`;
+        } else {
+            json_datos.forEach(function(item) {
+                fila += `<tr>`;
+                fila += `<td>${item.id_presupuesto}</td>`;
+                fila += `<td>${item.fecha_presupuesto}</td>`;
+                fila += `<td>${item.nombre_usuario || ''}</td>`;
+                fila += `<td>${item.nombre_proveedor || ''}</td>`;
+                fila += `<td>${item.pedido_compra || '-'}</td>`;
+                fila += `<td><span class="badge bg-label-${item.estado === 'ACTIVO' ? 'success' : 'danger'}">${item.estado}</span></td>`;
+                fila += `<td>`;
+                fila += `<button class='btn btn-sm btn-info' onclick="verDetallesPresupuesto(${item.id_presupuesto})"><i data-feather="eye"></i></button> `;
+                if (item.estado === 'ACTIVO') {
+                    fila += `<button class='btn btn-sm btn-danger' onclick="anularPresupuesto(${item.id_presupuesto})"><i data-feather="x-circle"></i></button> `;
+                }
+                fila += `<button class='btn btn-sm btn-primary' onclick="imprimirPresupuesto(${item.id_presupuesto})"><i data-feather="printer"></i></button>`;
+                fila += `</td>`;
+                fila += `</tr>`;
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar tabla:', error);
+        fila = '<tr><td colspan="7" class="text-center text-danger">Error al cargar los registros</td></tr>';
     }
+    
     $("#presupuestos_tb").html(fila);
     feather.replace();
 }
@@ -194,30 +334,33 @@ $(document).on("click", ".ver-detalles-presupuesto", function () {
     let id = $(this).data("id");
     let datos = ejecutarAjax("controladores/presupuesto.php", "obtener_detalles=" + id);
     
-    if (datos === "0") {
-        mensaje_dialogo_info_ERROR("No hay detalles para este presupuesto", "Información");
-        return;
+    try {
+        // Manejar tanto strings JSON como objetos ya parseados
+        let json_datos = typeof datos === 'string' ? JSON.parse(datos) : datos;
+        
+        if (!Array.isArray(json_datos) || json_datos.length === 0) {
+            mensaje_dialogo_info_ERROR("No hay detalles para este presupuesto", "Información");
+            return;
+        }
+        
+        let detalles_html = "<table class='table table-sm'><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>";
+        
+        json_datos.forEach(function(item) {
+            detalles_html += `<tr><td>${item.nombre_producto}</td><td>${item.cantidad}</td></tr>`;
+        });
+        
+        detalles_html += "</tbody></table>";
+        
+        Swal.fire({
+            title: 'Detalles del Presupuesto #' + id,
+            html: detalles_html,
+            icon: 'info',
+            confirmButtonText: 'Cerrar'
+        });
+    } catch (error) {
+        console.error('Error al obtener detalles:', error);
+        mensaje_dialogo_info_ERROR("Error al obtener los detalles", "Error");
     }
-    
-    let json_datos = JSON.parse(datos);
-    let detalles_html = "<table class='table table-sm'><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio Unit.</th><th>Subtotal</th></tr></thead><tbody>";
-    
-    let total = 0;
-    json_datos.forEach(function(item) {
-        let subtotal = parseFloat(item.cantidad) * parseFloat(item.precio_unitario);
-        total += subtotal;
-        detalles_html += `<tr><td>${item.nombre_producto}</td><td>${item.cantidad}</td><td>${parseFloat(item.precio_unitario).toFixed(2)}</td><td>${subtotal.toFixed(2)}</td></tr>`;
-    });
-    
-    detalles_html += `<tr class='table-active'><td colspan='3'><strong>TOTAL</strong></td><td><strong>${total.toFixed(2)}</strong></td></tr>`;
-    detalles_html += "</tbody></table>";
-    
-    Swal.fire({
-        title: 'Detalles del Presupuesto #' + id,
-        html: detalles_html,
-        icon: 'info',
-        confirmButtonText: 'Cerrar'
-    });
 });
 
 $(document).on("click", ".anular-presupuesto", function () {

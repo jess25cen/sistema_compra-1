@@ -10,14 +10,15 @@ if (isset($_GET['listar']) || isset($_POST['listar'])) {
     try {
         $sql = "SELECT 
                 p.id_presupuesto, 
-                p.fecha, 
+                p.fecha_presupuesto, 
                 p.estado,
-                u.nombre AS nombre_usuario,
+                u.nombre_usuario,
                 pr.nombre AS nombre_proveedor,
-                p.id_orden_compra
+                pc.pedido_compra
             FROM presupuesto p
-            JOIN usuarios u ON p.id_usuario = u.id_usuarios
-            JOIN proveedor pr ON p.id_proveedor = pr.id_proveedor
+            JOIN usuarios u ON p.id_usuario = u.id_usuario
+            LEFT JOIN proveedor pr ON p.id_proveedor = pr.id_proveedor
+            LEFT JOIN pedido_compra pc ON p.pedido_compra = pc.pedido_compra
             WHERE p.estado != 'ELIMINADO'
             ORDER BY p.id_presupuesto DESC";
         
@@ -28,7 +29,7 @@ if (isset($_GET['listar']) || isset($_POST['listar'])) {
         if (count($resultado) > 0) {
             echo json_encode($resultado);
         } else {
-            echo "0";
+            echo json_encode(array());
         }
     } catch (PDOException $e) {
         echo json_encode(array('error' => $e->getMessage()));
@@ -39,16 +40,16 @@ if (isset($_GET['guardar']) || isset($_POST['guardar'])) {
     try {
         $datos = json_decode($_POST['guardar'] ?? $_GET['guardar'], true);
         
-        $sql = "INSERT INTO presupuesto (fecha, id_usuario, id_proveedor, estado, id_orden_compra) 
-                VALUES (:fecha, :id_usuario, :id_proveedor, :estado, :id_orden_compra)";
+        $sql = "INSERT INTO presupuesto (fecha_presupuesto, id_usuario, estado, pedido_compra, id_proveedor) 
+                VALUES (:fecha_presupuesto, :id_usuario, :estado, :pedido_compra, :id_proveedor)";
         
         $stmt = $conexion->prepare($sql);
         $stmt->execute([
-            ':fecha' => $datos['fecha'],
+            ':fecha_presupuesto' => $datos['fecha_presupuesto'],
             ':id_usuario' => $datos['id_usuario'],
-            ':id_proveedor' => $datos['id_proveedor'],
             ':estado' => $datos['estado'] ?? 'ACTIVO',
-            ':id_orden_compra' => $datos['id_orden_compra'] ?? null
+            ':pedido_compra' => $datos['pedido_compra'] ?? null,
+            ':id_proveedor' => $datos['id_proveedor'] ?? null
         ]);
         
         $id_presupuesto = $conexion->lastInsertId();
@@ -93,7 +94,7 @@ if (isset($_GET['obtener_por_id']) || isset($_POST['obtener_por_id'])) {
         if ($resultado) {
             echo json_encode($resultado);
         } else {
-            echo "0";
+            echo json_encode(array());
         }
     } catch (PDOException $e) {
         echo json_encode(array('error' => $e->getMessage()));
@@ -106,17 +107,18 @@ if (isset($_GET['buscar']) || isset($_POST['buscar'])) {
         
         $sql = "SELECT 
                 p.id_presupuesto, 
-                p.fecha, 
+                p.fecha_presupuesto, 
                 p.estado,
-                u.nombre AS nombre_usuario,
+                u.nombre_usuario,
                 pr.nombre AS nombre_proveedor,
-                p.id_orden_compra
+                pc.pedido_compra
             FROM presupuesto p
-            JOIN usuarios u ON p.id_usuario = u.id_usuarios
-            JOIN proveedor pr ON p.id_proveedor = pr.id_proveedor
+            JOIN usuarios u ON p.id_usuario = u.id_usuario
+            LEFT JOIN proveedor pr ON p.id_proveedor = pr.id_proveedor
+            LEFT JOIN pedido_compra pc ON p.pedido_compra = pc.pedido_compra
             WHERE p.estado != 'ELIMINADO'
             AND (p.id_presupuesto LIKE :texto 
-                 OR u.nombre LIKE :texto 
+                 OR u.nombre_usuario LIKE :texto
                  OR pr.nombre LIKE :texto)
             ORDER BY p.id_presupuesto DESC";
         
@@ -127,7 +129,7 @@ if (isset($_GET['buscar']) || isset($_POST['buscar'])) {
         if (count($resultado) > 0) {
             echo json_encode($resultado);
         } else {
-            echo "0";
+            echo json_encode(array());
         }
     } catch (PDOException $e) {
         echo json_encode(array('error' => $e->getMessage()));
@@ -142,11 +144,8 @@ if (isset($_GET['obtener_detalles']) || isset($_POST['obtener_detalles'])) {
                 dp.id_detalle_presupuesto,
                 dp.id_presupuesto,
                 dp.id_productos,
-                p.nombre AS nombre_producto,
-                p.precio,
-                dp.cantidad,
-                dp.precio_unitario,
-                dp.subtotal
+                p.nombre_producto,
+                dp.cantidad
             FROM detalle_presupuesto dp
             JOIN productos p ON dp.id_productos = p.id_productos
             WHERE dp.id_presupuesto = :id";
@@ -158,7 +157,7 @@ if (isset($_GET['obtener_detalles']) || isset($_POST['obtener_detalles'])) {
         if (count($resultado) > 0) {
             echo json_encode($resultado);
         } else {
-            echo "0";
+            echo json_encode(array());
         }
     } catch (PDOException $e) {
         echo json_encode(array('error' => $e->getMessage()));
