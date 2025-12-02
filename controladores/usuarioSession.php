@@ -194,3 +194,4 @@ class UsuarioSession {
         return $_SESSION['id_usuario'];
     }
 }
+?>

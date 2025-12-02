@@ -1,3 +1,12 @@
+<?php
+// Obtener usuario de la sesión
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$ses_id = isset($_SESSION['id_usuario']) ? $_SESSION['id_usuario'] : null;
+$ses_name = isset($_SESSION['nombre_completo']) ? $_SESSION['nombre_completo'] : (isset($_SESSION['nombre_usuario']) ? $_SESSION['nombre_usuario'] : 'Usuario');
+?>
+
 <div class="container-fluid card">
   <div class="card-header">
     <h5 class="card-title">Agregar Presupuesto Compra</h5>
@@ -7,8 +16,8 @@
       <div class="row mb-3">
         <div class="col-md-4">
           <label class="form-label">Usuario <span class="text-danger">*</span></label>
-          <input type="text" id="presupuesto_usuario" class="form-control" readonly>
-          <input type="hidden" id="id_usuario_presupuesto">
+          <input type="text" id="presupuesto_usuario" class="form-control" readonly disabled value="<?php echo htmlspecialchars($ses_name); ?>">
+          <input type="hidden" id="id_usuario_presupuesto" value="<?php echo $ses_id; ?>">
         </div>
         <div class="col-md-4">
           <label class="form-label">Fecha <span class="text-danger">*</span></label>

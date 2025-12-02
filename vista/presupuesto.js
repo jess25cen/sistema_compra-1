@@ -8,17 +8,9 @@ function mostrarAgregarPresupuesto() {
     let contenido = dameContenido("paginas/movimientos/presupuesto/agregar.php");
     $("#contenido-principal").html(contenido);
     
-    // Obtener usuario de sesión
-    let respuesta = ejecutarAjax("controladores/usuarioSession.php", "obtener=1");
-    try {
-        let json_usuario = typeof respuesta === 'string' ? JSON.parse(respuesta) : respuesta;
-        if (json_usuario && json_usuario.id_usuario) {
-            $("#presupuesto_usuario").val(json_usuario.nombre_usuario || json_usuario.nombre_completo || 'Usuario');
-            $("#id_usuario_presupuesto").val(json_usuario.id_usuario);
-        }
-    } catch (error) {
-        console.error('Error al obtener usuario de sesión:', error);
-    }
+    // Establecer fecha de hoy
+    let hoy = new Date().toISOString().split('T')[0];
+    $("#presupuesto_fecha").val(hoy);
     
     cargarListaPedidosCompra();
     cargarListaProveedores();
