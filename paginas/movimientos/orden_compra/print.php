@@ -7,9 +7,20 @@ $detalle = $db->conectar()->prepare(
     "SELECT do.id_detalle_orden, do.cantidad, p.nombre_producto, p.precio
      FROM detalle_orden do
      LEFT JOIN productos p ON do.id_productos = p.id_productos
-     WHERE do.orden_compra = :id"
+     WHERE do.id_orden_compra = :id"
 );
 $detalle->execute(['id' => $id]);
+// Obtener cabecera de la orden (proveedor, fecha, condiciones)
+$cab = $db->conectar()->prepare(
+    "SELECT oc.id_orden_compra, oc.fecha_orden, oc.condiciones_pago, u.nombre_usuario, prov.nombre AS proveedor_nombre, pr.id_presupuesto
+     FROM orden_compra oc
+     LEFT JOIN usuarios u ON oc.id_usuario = u.id_usuario
+     LEFT JOIN proveedor prov ON oc.id_proveedor = prov.id_proveedor
+     LEFT JOIN presupuesto pr ON oc.id_presupuesto = pr.id_presupuesto
+     WHERE oc.id_orden_compra = :id LIMIT 1"
+);
+$cab->execute(['id' => $id]);
+$cabecera = $cab->fetch(PDO::FETCH_ASSOC);
 
 ?>
 <html>
@@ -21,6 +32,12 @@ $detalle->execute(['id' => $id]);
 <body>
 <div class="container">
     <h3>Orden de Compra #<?= htmlspecialchars($id) ?></h3>
+    <?php if (!empty($cabecera)): ?>
+        <p><strong>Proveedor:</strong> <?= htmlspecialchars($cabecera['proveedor_nombre'] ?? '') ?></p>
+        <p><strong>Presupuesto:</strong> <?= htmlspecialchars($cabecera['id_presupuesto'] ?? '') ?></p>
+        <p><strong>Fecha:</strong> <?= htmlspecialchars($cabecera['fecha_orden'] ?? '') ?></p>
+        <p><strong>Condiciones:</strong> <?= htmlspecialchars($cabecera['condiciones_pago'] ?? '') ?></p>
+    <?php endif; ?>
     <table class="table">
         <thead>
             <tr>

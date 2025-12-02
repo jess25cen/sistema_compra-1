@@ -29,9 +29,13 @@ if (isset($_POST['obtener_detalles'])) {
 function listar() {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
+        "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.condiciones_pago, oc.id_usuario, u.nombre_usuario,
+               oc.id_proveedor, prov.nombre AS proveedor_nombre,
+               pr.id_presupuesto AS presupuesto_id, pr.fecha_presupuesto
            FROM orden_compra oc
            LEFT JOIN usuarios u ON oc.id_usuario = u.id_usuario
+           LEFT JOIN presupuesto pr ON oc.id_presupuesto = pr.id_presupuesto
+           LEFT JOIN proveedor prov ON oc.id_proveedor = prov.id_proveedor
        ORDER BY oc.id_orden_compra DESC;"
     );
     $query->execute();
@@ -51,13 +55,23 @@ function guardar($lista) {
         $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         $query = $conexion->prepare(
-            "INSERT INTO orden_compra (fecha_orden, estado, id_usuario)
-             VALUES (:fecha_orden, :estado, :id_usuario);"
+            "INSERT INTO orden_compra (fecha_orden, estado, condiciones_pago, id_usuario, id_proveedor, id_presupuesto)
+             VALUES (:fecha_orden, :estado, :condiciones_pago, :id_usuario, :id_proveedor, :id_presupuesto);"
         );
+
+        // Validaciones mínimas: estos campos son NOT NULL en la nueva estructura
+        if (empty($json_datos['id_usuario']) || empty($json_datos['id_proveedor_orden']) || empty($json_datos['id_presupuesto'])) {
+            echo json_encode(['error' => 'Faltan datos requeridos: id_usuario, id_proveedor o id_presupuesto']);
+            return;
+        }
+
         $params = [
             'fecha_orden' => !empty($json_datos['fecha_orden']) ? $json_datos['fecha_orden'] : date('Y-m-d'),
-            'estado' => 'ACTIVO',
-            'id_usuario' => !empty($json_datos['id_usuario']) ? $json_datos['id_usuario'] : 1,
+            'estado' => $json_datos['estado'] ?? 'ACTIVO',
+            'condiciones_pago' => $json_datos['condiciones_pago'] ?? '',
+            'id_usuario' => $json_datos['id_usuario'],
+            'id_proveedor' => $json_datos['id_proveedor_orden'],
+            'id_presupuesto' => $json_datos['id_presupuesto']
         ];
 
         if (!$query->execute($params)) {
@@ -92,9 +106,13 @@ function anular($id) {
 function obtener_por_id($id) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
+        "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.condiciones_pago, oc.id_usuario, u.nombre_usuario,
+               oc.id_proveedor, prov.nombre AS proveedor_nombre,
+               pr.id_presupuesto AS presupuesto_id, pr.fecha_presupuesto
            FROM orden_compra oc
            LEFT JOIN usuarios u ON oc.id_usuario = u.id_usuario
+           LEFT JOIN presupuesto pr ON oc.id_presupuesto = pr.id_presupuesto
+           LEFT JOIN proveedor prov ON oc.id_proveedor = prov.id_proveedor
           WHERE oc.id_orden_compra = :id
           LIMIT 1;"
     );
@@ -108,14 +126,17 @@ function obtener_por_id($id) {
 
 function buscar($texto) {
     $base_datos = new DB();
-    $query = $base_datos->conectar()->prepare(
-        "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
-           FROM orden_compra oc
-           LEFT JOIN usuarios u ON oc.id_usuario = u.id_usuario
-          WHERE CONCAT(oc.id_orden_compra, ' ', oc.fecha_orden, ' ', oc.estado, ' ', u.nombre_usuario) LIKE :texto
-       ORDER BY oc.id_orden_compra DESC
-          LIMIT 50;"
-    );
+     $query = $base_datos->conectar()->prepare(
+          "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.condiciones_pago, oc.id_usuario, u.nombre_usuario,
+                    prov.nombre AS proveedor_nombre, pr.id_presupuesto AS presupuesto_id
+              FROM orden_compra oc
+              LEFT JOIN usuarios u ON oc.id_usuario = u.id_usuario
+              LEFT JOIN presupuesto pr ON oc.id_presupuesto = pr.id_presupuesto
+              LEFT JOIN proveedor prov ON oc.id_proveedor = prov.id_proveedor
+             WHERE CONCAT(oc.id_orden_compra, ' ', oc.fecha_orden, ' ', oc.estado, ' ', u.nombre_usuario) LIKE :texto
+        ORDER BY oc.id_orden_compra DESC
+            LIMIT 50;"
+     );
     $query->execute(['texto' => "%$texto%"]);
     if ($query->rowCount()) {
         echo json_encode($query->fetchAll(PDO::FETCH_OBJ));
@@ -127,10 +148,10 @@ function buscar($texto) {
 function obtener_detalles($id_orden) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT do.id_detalle_orden, do.cantidad, do.orden_compra, do.id_productos, p.nombre_producto, p.precio
-         FROM detalle_orden do
-         LEFT JOIN productos p ON do.id_productos = p.id_productos
-         WHERE do.orden_compra = :id_orden;"
+           "SELECT do.id_detalle_orden, do.cantidad, do.id_orden_compra AS orden_compra, do.id_producto AS id_productos, p.nombre_producto, p.precio
+            FROM detalle_orden do
+            LEFT JOIN productos p ON do.id_producto = p.id_productos
+            WHERE do.id_orden_compra = :id_orden;"
     );
     $query->execute(['id_orden' => $id_orden]);
     if ($query->rowCount()) {

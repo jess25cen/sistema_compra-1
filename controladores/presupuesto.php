@@ -39,18 +39,30 @@ if (isset($_GET['listar']) || isset($_POST['listar'])) {
 if (isset($_GET['guardar']) || isset($_POST['guardar'])) {
     try {
         $datos = json_decode($_POST['guardar'] ?? $_GET['guardar'], true);
-        
-        $sql = "INSERT INTO presupuesto (fecha_presupuesto, id_usuario, estado, pedido_compra, id_proveedor) 
-                VALUES (:fecha_presupuesto, :id_usuario, :estado, :pedido_compra, :id_proveedor)";
-        
-        $stmt = $conexion->prepare($sql);
-        $stmt->execute([
+        // Construir INSERT dinámico para evitar enviar columnas con valores NULL
+        $cols = ['fecha_presupuesto', 'id_usuario', 'estado'];
+        $placeholders = [':fecha_presupuesto', ':id_usuario', ':estado'];
+        $params = [
             ':fecha_presupuesto' => $datos['fecha_presupuesto'],
             ':id_usuario' => $datos['id_usuario'],
-            ':estado' => $datos['estado'] ?? 'ACTIVO',
-            ':pedido_compra' => $datos['pedido_compra'] ?? null,
-            ':id_proveedor' => $datos['id_proveedor'] ?? null
-        ]);
+            ':estado' => $datos['estado'] ?? 'ACTIVO'
+        ];
+
+        if (isset($datos['pedido_compra']) && $datos['pedido_compra'] !== '') {
+            $cols[] = 'pedido_compra';
+            $placeholders[] = ':pedido_compra';
+            $params[':pedido_compra'] = $datos['pedido_compra'];
+        }
+
+        if (isset($datos['id_proveedor']) && $datos['id_proveedor'] !== '') {
+            $cols[] = 'id_proveedor';
+            $placeholders[] = ':id_proveedor';
+            $params[':id_proveedor'] = $datos['id_proveedor'];
+        }
+
+        $sql = "INSERT INTO presupuesto (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $placeholders) . ")";
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute($params);
         
         $id_presupuesto = $conexion->lastInsertId();
         

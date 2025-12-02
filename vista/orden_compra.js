@@ -14,6 +14,66 @@ function mostrarAgregarOrdenCompra() {
     
     cargarListaProveedores();
     cargarListaProductosOrden();
+    cargarListaPresupuestos();
+    // Bind cambio de presupuesto para cargar sus detalles
+    $(document).off('change', '#orden_presupuesto');
+    $(document).on('change', '#orden_presupuesto', function() {
+        cargarDetallesPresupuestoSeleccionado();
+    });
+}
+
+function cargarDetallesPresupuestoSeleccionado() {
+    let id_pres = $("#orden_presupuesto").val();
+    if (!id_pres || id_pres === "") {
+        // limpiar tabla
+        $("#detalles_orden_tb").empty();
+        return;
+    }
+
+    let detalles = ejecutarAjax("controladores/presupuesto.php", "obtener_detalles=" + id_pres);
+    detalles = typeof detalles === 'string' ? JSON.parse(detalles) : detalles;
+    if (!Array.isArray(detalles)) detalles = [];
+
+    // Limpiar tabla
+    $("#detalles_orden_tb").empty();
+
+    detalles.forEach(function(item, idx) {
+        // item expected: id_detalle_presupuesto, id_presupuesto, id_productos, nombre_producto, cantidad
+        let id_producto = item.id_productos || item.id_producto || null;
+        let cantidad = item.cantidad || 1;
+
+        // Obtener costo del producto
+        let prod = ejecutarAjax("controladores/producto.php", "id=" + id_producto);
+        prod = typeof prod === 'string' ? JSON.parse(prod) : prod;
+        let costo = 0;
+        if (prod && prod.costo !== undefined) costo = prod.costo;
+
+        let contador = $("#detalles_orden_tb tr").length + 1;
+        let fila = `<tr>`;
+        fila += `<td>${contador}</td>`;
+        fila += `<td><input type="hidden" class="producto_id" value="${id_producto}">${item.nombre_producto || ''}</td>`;
+        fila += `<td><input type="hidden" class="producto_cantidad" value="${cantidad}">${cantidad}</td>`;
+        fila += `<td><input type="number" step="0.01" class="form-control form-control-sm producto_costo" value="${costo}"></td>`;
+        fila += `<td class='text-end'><button class='btn btn-danger btn-sm eliminar-detalle-orden-btn' type="button"><i data-feather="trash-2"></i></button></td>`;
+        fila += `</tr>`;
+
+        $("#detalles_orden_tb").append(fila);
+    });
+    feather.replace();
+}
+
+function cargarListaPresupuestos() {
+    let presupuestos = ejecutarAjax("controladores/presupuesto.php", "listar=1");
+    try {
+        let json_pres = typeof presupuestos === 'string' ? JSON.parse(presupuestos) : presupuestos;
+        if (!Array.isArray(json_pres)) json_pres = [];
+        $("#orden_presupuesto").find("option:not(:first)").remove();
+        json_pres.forEach(function(item) {
+            $("#orden_presupuesto").append(`<option value="${item.id_presupuesto}">Presupuesto #${item.id_presupuesto} - ${item.fecha_presupuesto}</option>`);
+        });
+    } catch (e) {
+        console.error('Error al cargar presupuestos', e);
+    }
 }
 
 function cargarListaProveedores() {
@@ -76,11 +136,17 @@ function agregarTablaOrdenCompra() {
 
     let nombre_producto = $("#orden_producto option:selected").text();
     let contador = $("#detalles_orden_tb tr").length + 1;
-    
+
+    // obtener costo del producto
+    let prod = ejecutarAjax("controladores/producto.php", "id=" + id_producto);
+    prod = typeof prod === 'string' ? JSON.parse(prod) : prod;
+    let costo = (prod && prod.costo !== undefined) ? prod.costo : 0;
+
     let fila = `<tr>`;
     fila += `<td>${contador}</td>`;
     fila += `<td><input type="hidden" class="producto_id" value="${id_producto}">${nombre_producto}</td>`;
     fila += `<td><input type="hidden" class="producto_cantidad" value="${cantidad}">${cantidad}</td>`;
+    fila += `<td><input type="number" step="0.01" class="form-control form-control-sm producto_costo" value="${costo}"></td>`;
     fila += `<td class='text-end'>`;
     fila += `<button class='btn btn-danger btn-sm eliminar-detalle-orden-btn' type="button"><i data-feather="trash-2"></i></button>`;
     fila += `</td>`;
@@ -225,6 +291,8 @@ function cargarTablaOrdenesCompra() {
                 fila += `<tr>`;
                 fila += `<td>${item.orden_compra}</td>`;
                 fila += `<td>${item.fecha_orden}</td>`;
+                fila += `<td>${item.proveedor_nombre ? item.proveedor_nombre : ''}</td>`;
+                fila += `<td>${item.presupuesto_id ? ' #' + item.presupuesto_id : ''}</td>`;
                 fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
                 fila += `<td><span class="badge bg-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
                 fila += `<td class='text-end'>`;
@@ -315,15 +383,19 @@ function guardarOrdenCompraNew() {
     let id_usuario_orden = $("#id_usuario_orden").val();
     let fecha_orden = $("#orden_fecha").val();
     let id_proveedor_orden = $("#orden_proveedor").val() || null;
+    let id_presupuesto = $("#orden_presupuesto").val() || null;
+    let condiciones_pago = $("#orden_condiciones_pago").val() || '';
     let detalles = [];
     
     // Recolectar detalles del formulario
     $("#detalles_orden_tb tr").each(function() {
         let id_producto = $(this).find("input.producto_id").val();
         let cantidad = $(this).find("input.producto_cantidad").val();
+        let costo = $(this).find("input.producto_costo").val() || 0;
         detalles.push({
             id_producto: id_producto,
             cantidad: cantidad
+            , precio_unitario: costo
         });
     });
     
@@ -336,12 +408,22 @@ function guardarOrdenCompraNew() {
         alert("Debe agregar al menos un producto");
         return;
     }
+    if (!id_proveedor_orden || id_proveedor_orden === "0") {
+        Swal.fire({ icon: 'warning', title: 'Atención', text: 'Debe seleccionar un proveedor' });
+        return;
+    }
+    if (!id_presupuesto || id_presupuesto === "") {
+        Swal.fire({ icon: 'warning', title: 'Atención', text: 'Debe seleccionar un presupuesto' });
+        return;
+    }
     
     // Preparar JSON para envío de orden
     let json_datos_orden = JSON.stringify({
         id_usuario: id_usuario_orden,
         fecha_orden: fecha_orden,
-        id_proveedor_orden: id_proveedor_orden
+        id_proveedor_orden: id_proveedor_orden,
+        id_presupuesto: id_presupuesto,
+        condiciones_pago: condiciones_pago
     });
     
     // Guardar orden primero
@@ -368,7 +450,8 @@ function guardarOrdenCompraNew() {
         let json_detalle = JSON.stringify({
             cantidad: detalles[i].cantidad,
             orden_compra: id_orden,
-            id_productos: detalles[i].id_producto
+            id_productos: detalles[i].id_producto,
+            precio_unitario: detalles[i].precio_unitario || 0
         });
         
         let respuesta_detalle = ejecutarAjax("controladores/detalle_orden.php", "guardar=" + json_detalle);

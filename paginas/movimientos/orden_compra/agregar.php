@@ -29,6 +29,12 @@ $ses_name = isset($_SESSION['nombre_completo']) ? $_SESSION['nombre_completo'] :
             <option value="0">-- Seleccionar --</option>
           </select>
         </div>
+        <div class="col-md-4">
+          <label class="form-label">Presupuesto</label>
+          <select id="orden_presupuesto" class="form-select">
+            <option value="">-- Seleccionar (obligatorio) --</option>
+          </select>
+        </div>
       </div>
 
       <div class="row mb-3">
@@ -52,6 +58,13 @@ $ses_name = isset($_SESSION['nombre_completo']) ? $_SESSION['nombre_completo'] :
 
       <hr>
 
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Condiciones de Pago</label>
+          <input type="text" id="orden_condiciones_pago" class="form-control" placeholder="Ej: 30 días, Contado, etc.">
+        </div>
+      </div>
+
       <div class="table-responsive">
         <table class="table table-sm table-striped">
           <thead>
@@ -59,6 +72,7 @@ $ses_name = isset($_SESSION['nombre_completo']) ? $_SESSION['nombre_completo'] :
               <th style="width: 50px;">#</th>
               <th>Producto</th>
               <th style="width: 100px;">Cantidad</th>
+              <th style="width: 120px;">Costo</th>
               <th style="width: 80px;">Acción</th>
             </tr>
           </thead>
