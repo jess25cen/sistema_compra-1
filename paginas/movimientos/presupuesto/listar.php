@@ -25,7 +25,6 @@
             <th>Fecha</th>
             <th>Usuario</th>
             <th>Proveedor</th>
-            <th>Pedido Compra</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>

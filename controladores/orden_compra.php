@@ -29,10 +29,10 @@ if (isset($_POST['obtener_detalles'])) {
 function listar() {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT oc.orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
+        "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
            FROM orden_compra oc
            LEFT JOIN usuarios u ON oc.id_usuario = u.id_usuario
-       ORDER BY oc.orden_compra DESC;"
+       ORDER BY oc.id_orden_compra DESC;"
     );
     $query->execute();
     if ($query->rowCount()) {
@@ -84,7 +84,7 @@ function guardar($lista) {
 function anular($id) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "UPDATE orden_compra SET estado = 'ANULADO' WHERE orden_compra = :id;"
+        "UPDATE orden_compra SET estado = 'ANULADO' WHERE id_orden_compra = :id;"
     );
     $query->execute(['id' => $id]);
 }
@@ -92,10 +92,10 @@ function anular($id) {
 function obtener_por_id($id) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT oc.orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
+        "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
            FROM orden_compra oc
            LEFT JOIN usuarios u ON oc.id_usuario = u.id_usuario
-          WHERE oc.orden_compra = :id
+          WHERE oc.id_orden_compra = :id
           LIMIT 1;"
     );
     $query->execute(['id' => $id]);
@@ -109,11 +109,11 @@ function obtener_por_id($id) {
 function buscar($texto) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT oc.orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
+        "SELECT oc.id_orden_compra as orden_compra, oc.fecha_orden, oc.estado, oc.id_usuario, u.nombre_usuario
            FROM orden_compra oc
            LEFT JOIN usuarios u ON oc.id_usuario = u.id_usuario
-          WHERE CONCAT(oc.orden_compra, ' ', oc.fecha_orden, ' ', oc.estado, ' ', u.nombre_usuario) LIKE :texto
-       ORDER BY oc.orden_compra DESC
+          WHERE CONCAT(oc.id_orden_compra, ' ', oc.fecha_orden, ' ', oc.estado, ' ', u.nombre_usuario) LIKE :texto
+       ORDER BY oc.id_orden_compra DESC
           LIMIT 50;"
     );
     $query->execute(['texto' => "%$texto%"]);

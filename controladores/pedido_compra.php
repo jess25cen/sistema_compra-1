@@ -128,7 +128,7 @@ if (isset($_GET['obtener_detalles']) || isset($_POST['obtener_detalles'])) {
     try {
         $id = $_POST['obtener_detalles'] ?? $_GET['obtener_detalles'];
         
-        $sql = "SELECT dp.*, p.nombre AS nombre_producto, p.precio 
+        $sql = "SELECT dp.*, p.nombre_producto, p.precio 
                 FROM detalle_pedido dp 
                 LEFT JOIN productos p ON dp.id_productos = p.id_productos 
                 WHERE dp.pedido_compra = :id";
@@ -140,7 +140,7 @@ if (isset($_GET['obtener_detalles']) || isset($_POST['obtener_detalles'])) {
         if (count($resultado) > 0) {
             echo json_encode($resultado);
         } else {
-            echo "0";
+            echo json_encode(array());
         }
     } catch (PDOException $e) {
         echo json_encode(array('error' => $e->getMessage()));

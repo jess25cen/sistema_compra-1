@@ -1,69 +1,93 @@
-<div class="container-fluid card" style="padding: 30px;">
-    <div class="row g-3">
+<?php
+// Obtener usuario de la sesión
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$ses_id = isset($_SESSION['id_usuario']) ? $_SESSION['id_usuario'] : null;
+$ses_name = isset($_SESSION['nombre_completo']) ? $_SESSION['nombre_completo'] : (isset($_SESSION['nombre_usuario']) ? $_SESSION['nombre_usuario'] : 'Usuario');
+?>
+
+<div class="container-fluid card">
+  <div class="card-header">
+    <h5 class="card-title">Agregar Orden de Compra</h5>
+  </div>
+  <div class="card-body">
+    <form id="form_orden">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Usuario <span class="text-danger">*</span></label>
+          <input type="text" id="orden_usuario" class="form-control" readonly disabled value="<?php echo htmlspecialchars($ses_name); ?>">
+          <input type="hidden" id="id_usuario_orden" value="<?php echo $ses_id; ?>">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Fecha <span class="text-danger">*</span></label>
+          <input type="date" id="orden_fecha" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Proveedor</label>
+          <select id="orden_proveedor" class="form-select">
+            <option value="0">-- Seleccionar --</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Producto <span class="text-danger">*</span></label>
+          <select id="orden_producto" class="form-select" required>
+            <option value="0">-- Seleccionar --</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+          <input type="number" id="orden_cantidad" class="form-control" value="1" min="1" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">&nbsp;</label>
+          <button type="button" class="btn btn-primary w-100" onclick="agregarTablaOrdenCompra()">
+            Agregar
+          </button>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="table-responsive">
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Producto</th>
+              <th style="width: 100px;">Cantidad</th>
+              <th style="width: 80px;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="detalles_orden_tb">
+            <!-- Los detalles se cargan aquí dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <hr>
+
+      <div class="row">
         <div class="col-md-12">
-            <h3 id="orden_compra_form_titulo">Nueva Orden de Compra</h3>
+          <button type="button" class="btn btn-primary" onclick="guardarOrdenCompraNew()">
+            <i data-feather="save"></i> Guardar
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="cancelarOrdenCompra()">
+            <i data-feather="x"></i> Cancelar
+          </button>
         </div>
-        <div class="col-md-12">
-            <hr>
-        </div>
-        <input type="hidden" id="id_orden_compra" value="0">
-        <div class="col-md-6">
-            <label for="orden_compra_fecha" class="form-label">Fecha *</label>
-            <input type="date" class="form-control" id="orden_compra_fecha">
-        </div>
-        <div class="col-md-6">
-            <label for="orden_compra_usuario" class="form-label">Usuario *</label>
-            <select id="orden_compra_usuario" class="form-select">
-                <option value="0">Selecciona un Usuario</option>
-            </select>
-        </div>
-        <div class="col-md-12">
-            <hr>
-            <h5>Detalles de la Orden</h5>
-        </div>
-        <div class="col-md-6">
-            <label for="orden_compra_producto" class="form-label">Producto</label>
-            <select id="orden_compra_producto" class="form-select">
-                <option value="0">Selecciona un Producto</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="orden_compra_cantidad" class="form-label">Cantidad</label>
-            <input type="number" class="form-control" id="orden_compra_cantidad" placeholder="Cantidad" value="1" min="1">
-        </div>
-        <div class="col-md-3 align-self-end">
-            <button class="btn btn-success w-100" onclick="agregarDetalleOrden(); return false;">Agregar Producto</button>
-        </div>
-        <div class="col-md-12">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Cantidad</th>
-                            <th class="text-end">Operaciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detalles_orden_tb"></tbody>
-                </table>
-            </div>
-        </div>
-        <div class="col-md-12 text-end">
-            <button class="btn btn-secondary" onclick="cancelarOrdenCompra(); return false;">Cancelar</button>
-            <button class="btn btn-primary" onclick="guardarOrdenCompra(); return false;">Guardar</button>
-        </div>
-    </div>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-$(document).ready(function() {
-    // Establecer fecha actual
-    let hoy = new Date();
-    let fecha = hoy.toISOString().split('T')[0];
-    $("#orden_compra_fecha").val(fecha);
-    
-    // Cargar usuarios y productos
-    cargarListaUsuariosActivos('#orden_compra_usuario');
-    cargarListaProductosActivos('#orden_compra_producto');
+document.addEventListener('DOMContentLoaded', function() {
+  // Establecer fecha de hoy
+  let hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('orden_fecha').value = hoy;
 });
 </script>

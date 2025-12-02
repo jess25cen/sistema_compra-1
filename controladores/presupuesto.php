@@ -13,7 +13,7 @@ if (isset($_GET['listar']) || isset($_POST['listar'])) {
                 p.fecha_presupuesto, 
                 p.estado,
                 u.nombre_usuario,
-                pr.nombre AS nombre_proveedor,
+                CONCAT(pr.nombre, ' ', pr.apellido) AS nombre_proveedor,
                 pc.pedido_compra
             FROM presupuesto p
             JOIN usuarios u ON p.id_usuario = u.id_usuario
@@ -110,7 +110,7 @@ if (isset($_GET['buscar']) || isset($_POST['buscar'])) {
                 p.fecha_presupuesto, 
                 p.estado,
                 u.nombre_usuario,
-                pr.nombre AS nombre_proveedor,
+                CONCAT(pr.nombre, ' ', pr.apellido) AS nombre_proveedor,
                 pc.pedido_compra
             FROM presupuesto p
             JOIN usuarios u ON p.id_usuario = u.id_usuario
@@ -119,7 +119,8 @@ if (isset($_GET['buscar']) || isset($_POST['buscar'])) {
             WHERE p.estado != 'ELIMINADO'
             AND (p.id_presupuesto LIKE :texto 
                  OR u.nombre_usuario LIKE :texto
-                 OR pr.nombre LIKE :texto)
+                 OR pr.nombre LIKE :texto
+                 OR pr.apellido LIKE :texto)
             ORDER BY p.id_presupuesto DESC";
         
         $stmt = $conexion->prepare($sql);

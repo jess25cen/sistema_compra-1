@@ -50,8 +50,8 @@ $ses_name = isset($_SESSION['nombre_completo']) ? $_SESSION['nombre_completo'] :
         </div>
         <div class="col-md-2">
           <label class="form-label">&nbsp;</label>
-          <button type="button" class="btn btn-success w-100" onclick="agregarTablaPresupuestoCompra()">
-            <i data-feather="plus"></i>
+          <button type="button" class="btn btn-primary w-100" onclick="agregarTablaPresupuestoCompra()">
+            Agregar
           </button>
         </div>
       </div>

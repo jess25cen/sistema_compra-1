@@ -100,7 +100,7 @@ function cargarDetallesPedidoCompra() {
         let json_detalles = typeof detalles === 'string' ? JSON.parse(detalles) : detalles;
         
         if (!Array.isArray(json_detalles) || json_detalles.length === 0) {
-            mensaje_dialogo_info_ERROR("No hay detalles para este pedido", "Información");
+            // Limpiar tabla silenciosamente sin mostrar alerta
             $("#detalles_presupuesto_tb").html("");
             return;
         }
@@ -126,7 +126,7 @@ function cargarDetallesPedidoCompra() {
         feather.replace();
     } catch (error) {
         console.error('Error al cargar detalles:', error);
-        mensaje_dialogo_info_ERROR("Error al cargar detalles del pedido", "Error");
+        $("#detalles_presupuesto_tb").html("");
     }
 }
 
@@ -268,7 +268,7 @@ function cargarTablaPresupuestos() {
         
         // Validar que sea un array y que tenga datos
         if (!Array.isArray(json_datos) || json_datos.length === 0) {
-            fila = `<tr><td colspan='7' class='text-center text-muted'>No hay registros</td></tr>`;
+            fila = `<tr><td colspan='6' class='text-center text-muted'>No hay registros</td></tr>`;
         } else {
             json_datos.forEach(function(item) {
                 fila += `<tr>`;
@@ -276,7 +276,6 @@ function cargarTablaPresupuestos() {
                 fila += `<td>${item.fecha_presupuesto}</td>`;
                 fila += `<td>${item.nombre_usuario || ''}</td>`;
                 fila += `<td>${item.nombre_proveedor || ''}</td>`;
-                fila += `<td>${item.pedido_compra || '-'}</td>`;
                 fila += `<td><span class="badge bg-label-${item.estado === 'ACTIVO' ? 'success' : 'danger'}">${item.estado}</span></td>`;
                 fila += `<td>`;
                 fila += `<button class='btn btn-sm btn-info' onclick="verDetallesPresupuesto(${item.id_presupuesto})"><i data-feather="eye"></i></button> `;
@@ -290,7 +289,7 @@ function cargarTablaPresupuestos() {
         }
     } catch (error) {
         console.error('Error al cargar tabla:', error);
-        fila = '<tr><td colspan="7" class="text-center text-danger">Error al cargar los registros</td></tr>';
+        fila = '<tr><td colspan="6" class="text-center text-danger">Error al cargar los registros</td></tr>';
     }
     
     $("#presupuestos_tb").html(fila);
@@ -374,7 +373,7 @@ $(document).on("keyup", "#b_presupuesto", function () {
         let json_datos = typeof datos === 'string' ? JSON.parse(datos) : datos;
         
         if (!Array.isArray(json_datos) || json_datos.length === 0) {
-            fila = `<tr><td colspan='7' class='text-center'>No hay registros</td></tr>`;
+            fila = `<tr><td colspan='6' class='text-center'>No hay registros</td></tr>`;
         } else {
             json_datos.forEach(function (item) {
                 fila += `<tr>`;
@@ -382,7 +381,6 @@ $(document).on("keyup", "#b_presupuesto", function () {
                 fila += `<td>${item.fecha_presupuesto || item.fecha || ''}</td>`;
                 fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
                 fila += `<td>${item.nombre_proveedor ? item.nombre_proveedor : ''}</td>`;
-                fila += `<td>${item.pedido_compra || '-'}</td>`;
                 fila += `<td><span class="badge bg-label-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
                 fila += `<td class='text-end'>`;
                 fila += `<button class='btn btn-info btn-sm' onclick="verDetallesPresupuesto(${item.id_presupuesto})"><i data-feather="eye"></i></button> `;
@@ -396,7 +394,7 @@ $(document).on("keyup", "#b_presupuesto", function () {
         }
     } catch (error) {
         console.error('Error al buscar presupuestos:', error);
-        fila = '<tr><td colspan="7" class="text-center text-danger">Error al procesar búsqueda</td></tr>';
+        fila = '<tr><td colspan="6" class="text-center text-danger">Error al procesar búsqueda</td></tr>';
     }
     
     $("#presupuestos_tb").html(fila);
