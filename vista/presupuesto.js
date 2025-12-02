@@ -119,10 +119,9 @@ function cargarDetallesPedidoCompra() {
         
         json_detalles.forEach(function(item) {
             let fila = `<tr>`;
+            fila += `<td>${contador}</td>`;
             fila += `<td><input type="hidden" class="producto_id" value="${item.id_productos}">${item.nombre_producto}</td>`;
             fila += `<td><input type="hidden" class="producto_cantidad" value="${item.cantidad}">${item.cantidad}</td>`;
-            fila += `<td><input type="hidden" class="producto_precio" value="0">0.00</td>`;
-            fila += `<td><input type="hidden" class="producto_subtotal" value="0">0.00</td>`;
             fila += `<td class='text-end'>`;
             fila += `<button class='btn btn-danger btn-sm eliminar-detalle-presupuesto-btn' type="button"><i data-feather="trash-2"></i></button>`;
             fila += `</td>`;
@@ -133,17 +132,15 @@ function cargarDetallesPedidoCompra() {
         });
         
         feather.replace();
-        calcularTotalPresupuesto();
     } catch (error) {
         console.error('Error al cargar detalles:', error);
         mensaje_dialogo_info_ERROR("Error al cargar detalles del pedido", "Error");
     }
 }
 
-function agregarDetallePresupuesto() {
+function agregarTablaPresupuestoCompra() {
     let id_producto = $("#presupuesto_producto").val();
     let cantidad = $("#presupuesto_cantidad").val();
-    let precio_unitario = $("#presupuesto_precio").val();
     
     if (id_producto === "0" || id_producto.trim().length === 0) {
         mensaje_dialogo_info_ERROR("Debes seleccionar un producto", "ATENCIÓN");
@@ -154,20 +151,14 @@ function agregarDetallePresupuesto() {
         mensaje_dialogo_info_ERROR("La cantidad debe ser mayor a 0", "ATENCIÓN");
         return;
     }
-    
-    if (!precio_unitario || precio_unitario < 0) {
-        mensaje_dialogo_info_ERROR("El precio debe ser mayor o igual a 0", "ATENCIÓN");
-        return;
-    }
 
     let nombre_producto = $("#presupuesto_producto option:selected").text();
-    let subtotal = parseFloat(cantidad) * parseFloat(precio_unitario);
+    let contador = $("#detalles_presupuesto_tb tr").length + 1;
     
     let fila = `<tr>`;
+    fila += `<td>${contador}</td>`;
     fila += `<td><input type="hidden" class="producto_id" value="${id_producto}">${nombre_producto}</td>`;
     fila += `<td><input type="hidden" class="producto_cantidad" value="${cantidad}">${cantidad}</td>`;
-    fila += `<td><input type="hidden" class="producto_precio" value="${precio_unitario}">${parseFloat(precio_unitario).toFixed(2)}</td>`;
-    fila += `<td><input type="hidden" class="producto_subtotal" value="${subtotal}">${subtotal.toFixed(2)}</td>`;
     fila += `<td class='text-end'>`;
     fila += `<button class='btn btn-danger btn-sm eliminar-detalle-presupuesto-btn' type="button"><i data-feather="trash-2"></i></button>`;
     fila += `</td>`;
@@ -176,26 +167,12 @@ function agregarDetallePresupuesto() {
     $("#detalles_presupuesto_tb").append(fila);
     feather.replace();
     
-    // Recalcular total
-    calcularTotalPresupuesto();
-    
+    // Limpiar campos
     $("#presupuesto_producto").val("0");
     $("#presupuesto_cantidad").val("1");
-    $("#presupuesto_precio").val("0.00");
 }
 
-function calcularTotalPresupuesto() {
-    let total = 0;
-    $("#detalles_presupuesto_tb tr").each(function() {
-        let subtotal = $(this).find(".producto_subtotal").val();
-        if (subtotal) {
-            total += parseFloat(subtotal);
-        }
-    });
-    $("#presupuesto_total").text(total.toFixed(2));
-}
-
-function guardarPresupuesto() {
+function guardarPresupuestoCompra() {
     if (!$("#id_usuario_presupuesto").val()) {
         mensaje_dialogo_info_ERROR("Usuario no cargado", "ATENCIÓN");
         return;
@@ -210,8 +187,7 @@ function guardarPresupuesto() {
     $("#detalles_presupuesto_tb tr").each(function() {
         let id_producto = $(this).find(".producto_id").val();
         let cantidad = $(this).find(".producto_cantidad").val();
-        let precio = $(this).find(".producto_precio").val();
-        if (id_producto && cantidad && precio) {
+        if (id_producto && cantidad) {
             detalles.push({
                 id_productos: id_producto,
                 cantidad: cantidad
@@ -288,7 +264,6 @@ function guardarPresupuesto() {
 
 $(document).on("click", ".eliminar-detalle-presupuesto-btn", function () {
     $(this).closest("tr").remove();
-    calcularTotalPresupuesto();
 });
 
 function cargarTablaPresupuestos() {
@@ -330,8 +305,7 @@ function cargarTablaPresupuestos() {
     feather.replace();
 }
 
-$(document).on("click", ".ver-detalles-presupuesto", function () {
-    let id = $(this).data("id");
+function verDetallesPresupuesto(id) {
     let datos = ejecutarAjax("controladores/presupuesto.php", "obtener_detalles=" + id);
     
     try {
@@ -361,10 +335,9 @@ $(document).on("click", ".ver-detalles-presupuesto", function () {
         console.error('Error al obtener detalles:', error);
         mensaje_dialogo_info_ERROR("Error al obtener los detalles", "Error");
     }
-});
+}
 
-$(document).on("click", ".anular-presupuesto", function () {
-    let id = $(this).data("id");
+function anularPresupuesto(id) {
     Swal.fire({
         title: 'Anular Presupuesto?',
         text: "¿Desea anular este presupuesto?",
@@ -381,18 +354,17 @@ $(document).on("click", ".anular-presupuesto", function () {
             cargarTablaPresupuestos();
         }
     });
-});
+}
 
-$(document).on("click", ".imprimir-presupuesto", function () {
-    let id = $(this).data("id");
+function imprimirPresupuesto(id) {
     if (!id) {
         mensaje_dialogo_info_ERROR("Debes seleccionar un presupuesto para imprimir", "Atención");
         return;
     }
     window.open("paginas/movimientos/presupuesto/print.php?id=" + id, "_blank");
-});
+}
 
-function cancelarPresupuesto() {
+function cancelarPresupuestoCompra() {
     mostrarListaPresupuestos();
 }
 
@@ -404,28 +376,37 @@ $(document).on("keyup", "#b_presupuesto", function () {
     }
     let datos = ejecutarAjax("controladores/presupuesto.php", "buscar=" + texto);
     let fila = "";
-    if (datos === "0") {
-        fila = `<tr><td colspan='7' class='text-center'>No hay registros</td></tr>`;
-    } else {
-        let json_datos = JSON.parse(datos);
-        json_datos.map(function (item) {
-            fila += `<tr>`;
-            fila += `<td>${item.id_presupuesto}</td>`;
-            fila += `<td>${item.fecha}</td>`;
-            fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
-            fila += `<td>${item.nombre_proveedor ? item.nombre_proveedor : ''}</td>`;
-            fila += `<td><span class="badge bg-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
-            fila += `<td>${item.id_orden_compra ? item.id_orden_compra : '-'}</td>`;
-            fila += `<td class='text-end'>`;
-            fila += `<button class='btn btn-info btn-sm ver-detalles-presupuesto' data-id='${item.id_presupuesto}'><i data-feather="eye"></i></button> `;
-            fila += `<button class='btn btn-warning btn-sm imprimir-presupuesto' data-id='${item.id_presupuesto}'><i data-feather="printer"></i></button> `;
-            if (item.estado === "ACTIVO") {
-                fila += `<button class='btn btn-danger btn-sm anular-presupuesto' data-id='${item.id_presupuesto}'><i data-feather="x-circle"></i></button>`;
-            }
-            fila += `</td>`;
-            fila += `</tr>`;
-        });
+    
+    try {
+        // Manejar tanto strings JSON como objetos ya parseados
+        let json_datos = typeof datos === 'string' ? JSON.parse(datos) : datos;
+        
+        if (!Array.isArray(json_datos) || json_datos.length === 0) {
+            fila = `<tr><td colspan='7' class='text-center'>No hay registros</td></tr>`;
+        } else {
+            json_datos.forEach(function (item) {
+                fila += `<tr>`;
+                fila += `<td>${item.id_presupuesto}</td>`;
+                fila += `<td>${item.fecha_presupuesto || item.fecha || ''}</td>`;
+                fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
+                fila += `<td>${item.nombre_proveedor ? item.nombre_proveedor : ''}</td>`;
+                fila += `<td>${item.pedido_compra || '-'}</td>`;
+                fila += `<td><span class="badge bg-label-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
+                fila += `<td class='text-end'>`;
+                fila += `<button class='btn btn-info btn-sm' onclick="verDetallesPresupuesto(${item.id_presupuesto})"><i data-feather="eye"></i></button> `;
+                fila += `<button class='btn btn-primary btn-sm' onclick="imprimirPresupuesto(${item.id_presupuesto})"><i data-feather="printer"></i></button> `;
+                if (item.estado === "ACTIVO") {
+                    fila += `<button class='btn btn-danger btn-sm' onclick="anularPresupuesto(${item.id_presupuesto})"><i data-feather="x-circle"></i></button>`;
+                }
+                fila += `</td>`;
+                fila += `</tr>`;
+            });
+        }
+    } catch (error) {
+        console.error('Error al buscar presupuestos:', error);
+        fila = '<tr><td colspan="7" class="text-center text-danger">Error al procesar búsqueda</td></tr>';
     }
+    
     $("#presupuestos_tb").html(fila);
     feather.replace();
 });
