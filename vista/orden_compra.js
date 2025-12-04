@@ -285,14 +285,13 @@ function cargarTablaOrdenesCompra() {
         
         // Validar que sea un array y que tenga datos
         if (!Array.isArray(json_datos) || json_datos.length === 0) {
-            fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
+            fila = `<tr><td colspan='6' class='text-center'>No hay registros</td></tr>`;
         } else {
             json_datos.forEach(function (item) {
                 fila += `<tr>`;
                 fila += `<td>${item.orden_compra}</td>`;
                 fila += `<td>${item.fecha_orden}</td>`;
                 fila += `<td>${item.proveedor_nombre ? item.proveedor_nombre : ''}</td>`;
-                fila += `<td>${item.presupuesto_id ? ' #' + item.presupuesto_id : ''}</td>`;
                 fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
                 fila += `<td><span class="badge bg-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
                 fila += `<td class='text-end'>`;
@@ -496,12 +495,13 @@ $(document).on("keyup", "#b_orden_compra", function () {
         let json_datos = typeof datos === 'string' ? JSON.parse(datos) : datos;
         
         if (!Array.isArray(json_datos) || json_datos.length === 0) {
-            fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
+            fila = `<tr><td colspan='6' class='text-center'>No hay registros</td></tr>`;
         } else {
             json_datos.forEach(function (item) {
                 fila += `<tr>`;
                 fila += `<td>${item.orden_compra}</td>`;
                 fila += `<td>${item.fecha_orden}</td>`;
+                fila += `<td>${item.proveedor_nombre ? item.proveedor_nombre : ''}</td>`;
                 fila += `<td>${item.nombre_usuario ? item.nombre_usuario : ''}</td>`;
                 fila += `<td><span class="badge bg-${item.estado === "ACTIVO" ? "success" : "danger"}">${item.estado}</span></td>`;
                 fila += `<td class='text-end'>`;

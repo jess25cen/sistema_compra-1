@@ -20,7 +20,6 @@
                             <th>#</th>
                             <th>Fecha</th>
                             <th>Proveedor</th>
-                            <th>Presupuesto</th>
                             <th>Usuario</th>
                             <th>Estado</th>
                             <th class="text-end">Operaciones</th>
