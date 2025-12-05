@@ -60,6 +60,25 @@ function cargarDetallesPresupuestoSeleccionado() {
         $("#detalles_orden_tb").append(fila);
     });
     feather.replace();
+
+    // Obtener proveedor asociado al presupuesto y seleccionarlo (si aplica)
+    try {
+        let presRaw = ejecutarAjax("controladores/presupuesto.php", "obtener_por_id=" + id_pres);
+        let pres = typeof presRaw === 'string' ? (presRaw.trim().length ? JSON.parse(presRaw) : {}) : presRaw;
+        if (pres && pres.id_proveedor) {
+            // seleccionar proveedor en el select si existe la opción
+            let exists = $("#orden_proveedor option[value='" + pres.id_proveedor + "']").length > 0;
+            if (exists) {
+                $("#orden_proveedor").val(pres.id_proveedor);
+            } else {
+                // si no existe la opción, intentar recargar proveedores y luego seleccionar
+                cargarListaProveedores();
+                setTimeout(function() { $("#orden_proveedor").val(pres.id_proveedor); }, 250);
+            }
+        }
+    } catch (e) {
+        console.error('Error al obtener presupuesto por id para seleccionar proveedor:', e);
+    }
 }
 
 function cargarListaPresupuestos() {

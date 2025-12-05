@@ -431,6 +431,7 @@
     <script src="vista/presupuesto.js"></script>
     <script src="vista/orden_compra.js"></script>
     <script src="vista/pedido_compra.js"></script>
+    <script src="vista/factura_compra.js"></script>
     <script src="vista/alumnos.js"></script>
     <script src="vista/informes.js"></script>
     <script src="vista/bachilleratos.js"></script>
