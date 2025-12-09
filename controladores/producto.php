@@ -32,7 +32,7 @@ if (isset($_POST['leer_activos'])) {
 function listar() {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT id_productos, nombre_producto, costo, precio, estado, id_categoria, id_tipo_producto
+        "SELECT id_productos, nombre_producto, costo, precio, estado, id_categoria, id_tipo_producto, iva
            FROM productos
        ORDER BY id_productos DESC;"
     );
@@ -48,8 +48,8 @@ function guardar($lista) {
     $json_datos = json_decode($lista, true);
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "INSERT INTO productos (nombre_producto, costo, precio, estado, id_categoria, id_tipo_producto)
-         VALUES (:nombre_producto, :costo, :precio, :estado, :id_categoria, :id_tipo_producto);"
+        "INSERT INTO productos (nombre_producto, costo, precio, estado, id_categoria, id_tipo_producto, iva)
+         VALUES (:nombre_producto, :costo, :precio, :estado, :id_categoria, :id_tipo_producto, :iva);"
     );
     $params = [
         'nombre_producto' => $json_datos['nombre_producto'],
@@ -58,6 +58,7 @@ function guardar($lista) {
         'estado' => $json_datos['estado'],
         'id_categoria' => !empty($json_datos['id_categoria']) ? $json_datos['id_categoria'] : 0,
         'id_tipo_producto' => !empty($json_datos['id_tipo_producto']) ? $json_datos['id_tipo_producto'] : 0,
+        'iva' => !empty($json_datos['iva']) ? $json_datos['iva'] : 0,
     ];
     $query->execute($params);
 }
@@ -72,7 +73,8 @@ function actualizar($lista) {
                 precio = :precio,
                 estado = :estado,
                 id_categoria = :id_categoria,
-                id_tipo_producto = :id_tipo_producto
+                id_tipo_producto = :id_tipo_producto,
+                iva = :iva
           WHERE id_productos = :id_productos;"
     );
     $params = [
@@ -83,6 +85,7 @@ function actualizar($lista) {
         'estado' => $json_datos['estado'],
         'id_categoria' => !empty($json_datos['id_categoria']) ? $json_datos['id_categoria'] : 0,
         'id_tipo_producto' => !empty($json_datos['id_tipo_producto']) ? $json_datos['id_tipo_producto'] : 0,
+        'iva' => !empty($json_datos['iva']) ? $json_datos['iva'] : 0,
     ];
     $query->execute($params);
 }
@@ -90,7 +93,7 @@ function actualizar($lista) {
 function obtener_por_id($id) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT id_productos, nombre_producto, costo, precio, estado, id_categoria, id_tipo_producto
+        "SELECT id_productos, nombre_producto, costo, precio, estado, id_categoria, id_tipo_producto, iva
            FROM productos
           WHERE id_productos = :id
           LIMIT 1;"
@@ -114,7 +117,7 @@ function eliminar($id) {
 function buscar($texto) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
-        "SELECT id_productos, nombre_producto, costo, precio, estado, id_categoria, id_tipo_producto
+        "SELECT id_productos, nombre_producto, costo, precio, estado, id_categoria, id_tipo_producto, iva
            FROM productos
           WHERE CONCAT(nombre_producto, ' ', id_categoria, ' ', id_tipo_producto, ' ', estado, ' ', id_productos) LIKE :texto
        ORDER BY id_productos DESC

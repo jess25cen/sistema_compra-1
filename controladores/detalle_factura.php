@@ -33,7 +33,7 @@ function guardar($lista) {
         }
 
         // Obtener precio unitario si no fue enviado
-        $stmtP = $conexion->prepare("SELECT precio, costo, id_tipo_producto FROM productos WHERE id_productos = :id LIMIT 1");
+        $stmtP = $conexion->prepare("SELECT precio, costo, iva FROM productos WHERE id_productos = :id LIMIT 1");
         $stmtP->execute(['id' => $idProd]);
         $prod = $stmtP->fetch(PDO::FETCH_ASSOC);
         if (!$prod) {
@@ -45,21 +45,9 @@ function guardar($lista) {
         // total neto sin IVA
         $total_bruto = $unit * $cantidad;
 
-        // determinar tasa IVA desde tipo_producto.nombre_tipo si es posible
-        $rate = 0.0;
-        try {
-            $stmtT = $conexion->prepare("SELECT nombre_tipo FROM tipo_producto WHERE id_tipo_producto = :id LIMIT 1");
-            $stmtT->execute(['id' => $prod['id_tipo_producto']]);
-            $tipo = $stmtT->fetch(PDO::FETCH_ASSOC);
-            if ($tipo && isset($tipo['nombre_tipo'])) {
-                $nt = strtolower($tipo['nombre_tipo']);
-                if (strpos($nt, '10') !== false) $rate = 0.10;
-                else if (strpos($nt, '5') !== false) $rate = 0.05;
-                else if (strpos($nt, 'ex') !== false || strpos($nt, 'exenta') !== false) $rate = 0.0;
-            }
-        } catch (Exception $e) {
-            $rate = 0.0;
-        }
+        // Obtener tasa IVA directamente del producto
+        $iva_valor = floatval($prod['iva'] ?? 0);
+        $rate = $iva_valor / 100.0;  // Convertir de porcentaje a decimal (ej: 10 -> 0.10)
 
         $total_iva = round($total_bruto * $rate, 2);
         $total_neto = round($total_bruto + $total_iva, 2);

@@ -149,10 +149,9 @@ function obtener_detalles($id_orden) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
            "SELECT do.id_detalle_orden, do.cantidad, do.id_orden_compra AS orden_compra, do.id_producto AS id_productos,
-               p.nombre_producto, p.precio, p.costo, p.id_tipo_producto, tp.nombre_tipo
+               p.nombre_producto, p.precio, p.costo, p.iva
             FROM detalle_orden do
             LEFT JOIN productos p ON do.id_producto = p.id_productos
-            LEFT JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto
             WHERE do.id_orden_compra = :id_orden;"
     );
     $query->execute(['id_orden' => $id_orden]);

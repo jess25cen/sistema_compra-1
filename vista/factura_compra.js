@@ -90,8 +90,8 @@ $(document).on('change', '#factura_orden', function() {
             let cantidad = it.cantidad || 1;
             // el controlador devuelve 'precio' en la consulta
             let precio = (it.precio !== undefined && it.precio !== null) ? it.precio : 0;
-            let tipoName = it.nombre_tipo || '';
-            let fila = `<tr data-tipo-name="${tipoName}">`;
+            let iva = (it.iva !== undefined && it.iva !== null) ? it.iva : 0;
+            let fila = `<tr data-iva="${iva}">`;
             fila += `<td>${idx+1}</td>`;
             fila += `<td><input type="hidden" class="producto_id" value="${it.id_productos}">${nombre}</td>`;
             fila += `<td><input type="number" min="0" step="1" class="form-control form-control-sm producto_cantidad" value="${cantidad}"></td>`;
@@ -117,12 +117,13 @@ function agregarTablaFactura() {
     let nombre = $("#factura_producto option:selected").text();
     let contador = $("#factura_detalles_tb tr").length + 1;
 
-    // obtener precio de producto
+    // obtener precio e iva del producto
     let prod = ejecutarAjax("controladores/producto.php", "id=" + id_producto);
     prod = typeof prod === 'string' ? JSON.parse(prod) : prod;
     let precio = (prod && prod.costo !== undefined) ? prod.costo : (prod.precio || 0);
+    let iva = (prod && prod.iva !== undefined) ? prod.iva : 0;
 
-    let fila = `<tr>`;
+    let fila = `<tr data-iva="${iva}">`;
     fila += `<td>${contador}</td>`;
     fila += `<td><input type="hidden" class="producto_id" value="${id_producto}">${nombre}</td>`;
     fila += `<td><input type="number" min="0" step="1" class="form-control form-control-sm producto_cantidad" value="${cantidad}"></td>`;
@@ -149,8 +150,8 @@ $(document).on('input change', '.producto_precio, .producto_cantidad', function(
 
 function calcularTotalesFactura(){
     let subtotal = 0.0;
-    let iva5 = 0.0;
-    let iva10 = 0.0;
+    let iva5_monto = 0.0;       // Monto de IVA 5%
+    let iva10_monto = 0.0;      // Monto de IVA 10%
     let exenta = 0.0;
     let total_iva = 0.0;
 
@@ -160,27 +161,41 @@ function calcularTotalesFactura(){
         let bruto = precio * cantidad;
         subtotal += bruto;
 
-        let tipoName = ($(this).data('tipo-name') || '').toString().toLowerCase();
-        let rate = 0.0;
-        if (tipoName.indexOf('10') !== -1) rate = 0.10;
-        else if (tipoName.indexOf('5') !== -1) rate = 0.05;
-        else if (tipoName.indexOf('ex') !== -1 || tipoName.indexOf('exenta') !== -1) rate = 0.0;
-        else rate = 0.0; // default exenta
+        // Obtener el IVA directamente del atributo data-iva (en porcentaje)
+        let iva_porcentaje = parseFloat($(this).attr('data-iva')) || 0;
+        let rate = iva_porcentaje / 100.0;  // Convertir de porcentaje a decimal
 
         let iva = parseFloat((bruto * rate).toFixed(2));
         total_iva += iva;
 
-        if (rate === 0.10) iva10 += bruto;
-        else if (rate === 0.05) iva5 += bruto;
-        else exenta += bruto;
+        console.log('Producto - Cantidad:', cantidad, 'Precio:', precio, 'Bruto:', bruto, 'IVA %:', iva_porcentaje, 'Tasa:', rate * 100 + '%', 'IVA $:', iva);
+
+        if (iva_porcentaje === 5) {
+            iva5_monto += iva;
+        }
+        else if (iva_porcentaje === 10) {
+            iva10_monto += iva;
+        }
+        else {
+            exenta += bruto;
+        }
     });
 
     let total = subtotal + total_iva;
 
+    console.log('=== CÁLCULO TOTALES ===');
+    console.log('Subtotal:', subtotal);
+    console.log('IVA 5%:', iva5_monto);
+    console.log('IVA 10%:', iva10_monto);
+    console.log('Exenta:', exenta);
+    console.log('Total IVA:', total_iva);
+    console.log('Total:', total);
+    console.log('=====================');
+
     // actualizar campos en la vista
     $('#fc_subtotal').val(subtotal.toFixed(2));
-    $('#fc_iva5').val(iva5.toFixed(2));
-    $('#fc_iva10').val(iva10.toFixed(2));
+    $('#fc_iva5').val(iva5_monto.toFixed(2));      // Mostrar el monto del IVA 5%
+    $('#fc_iva10').val(iva10_monto.toFixed(2));    // Mostrar el monto del IVA 10%
     $('#fc_exenta').val(exenta.toFixed(2));
     $('#fc_total_iva').val(total_iva.toFixed(2));
     $('#fc_total').val(total.toFixed(2));
