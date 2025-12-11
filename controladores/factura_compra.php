@@ -86,6 +86,31 @@ if (isset($_POST['anular']) || isset($_GET['anular'])) {
     exit;
 }
 
+if (isset($_POST['actualizar']) || isset($_GET['actualizar'])) {
+    try {
+        $datos = json_decode($_POST['actualizar'] ?? $_GET['actualizar'], true);
+        $id = $datos['id_factura_compra'] ?? null;
+        
+        if (!$id) {
+            echo json_encode(['error' => 'Falta id_factura_compra']);
+            exit;
+        }
+        
+        $estado = $datos['estado'] ?? null;
+        
+        if ($estado) {
+            $sql = "UPDATE factura_compra SET estado = :estado WHERE id_factura_compra = :id";
+            $stmt = $conexion->prepare($sql);
+            $stmt->execute([':estado' => $estado, ':id' => $id]);
+        }
+        
+        echo json_encode(['success' => true]);
+    } catch (PDOException $e) {
+        echo json_encode(array('error' => $e->getMessage()));
+    }
+    exit;
+}
+
 if (isset($_POST['obtener_por_id']) || isset($_GET['obtener_por_id'])) {
     try {
         $id = $_POST['obtener_por_id'] ?? $_GET['obtener_por_id'];
@@ -121,52 +146,57 @@ if (isset($_POST['obtener_detalles']) || isset($_GET['obtener_detalles'])) {
 if (isset($_POST['generar_libro']) || isset($_GET['generar_libro'])) {
     try {
         $id_factura = $_POST['generar_libro'] ?? $_GET['generar_libro'];
-        // calcular subtotales por tasa usando tipos de producto
-        $sql = "SELECT p.id_tipo_producto, tp.nombre_tipo,
-                       SUM(df.total_bruto) AS suma_bruto,
-                       SUM(df.total_iva) AS suma_iva
-                  FROM detalle_factura df
-                  LEFT JOIN productos p ON df.id_productos = p.id_productos
-                  LEFT JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto
-                 WHERE df.id_factura_compra = :id
-              GROUP BY p.id_tipo_producto, tp.nombre_tipo";
+        
+        // Obtener detalles de la factura con el IVA del producto
+        $sql = "SELECT df.cantidad, df.monto_total, p.iva
+                FROM detalle_factura df
+                LEFT JOIN productos p ON df.id_productos = p.id_productos
+                WHERE df.id_factura_compra = :id";
         $stmt = $conexion->prepare($sql);
         $stmt->execute([':id' => $id_factura]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $iva_5 = 0.0; $iva_10 = 0.0; $exenta = 0.0; $total_iva = 0.0; $subtotal = 0.0;
+        $iva_5 = 0.0;
+        $iva_10 = 0.0;
+        $exenta = 0.0;
+        $total_iva = 0.0;
+        $subtotal = 0.0;
+
         foreach ($rows as $r) {
-            $nt = strtolower($r['nombre_tipo'] ?? '');
-            $bruto = floatval($r['suma_bruto'] ?? 0);
-            $iva = floatval($r['suma_iva'] ?? 0);
-            $total_iva += $iva;
-            $subtotal += $bruto;
-            if (strpos($nt, '10') !== false) {
-                $iva_10 += $bruto;
-            } else if (strpos($nt, '5') !== false) {
-                $iva_5 += $bruto;
-            } else if (strpos($nt, 'ex') !== false || strpos($nt, 'exenta') !== false) {
-                $exenta += $bruto;
+            $monto_total = floatval($r['monto_total'] ?? 0);
+            $iva_valor = floatval($r['iva'] ?? 0);
+            $rate = $iva_valor / 100.0;
+
+            // Calcular el bruto (sin IVA)
+            $monto_bruto = $monto_total / (1 + $rate);
+            $monto_iva = $monto_total - $monto_bruto;
+
+            $subtotal += $monto_bruto;
+            $total_iva += $monto_iva;
+
+            if ($iva_valor == 5) {
+                $iva_5 += $monto_bruto;
+            } else if ($iva_valor == 10) {
+                $iva_10 += $monto_bruto;
             } else {
-                // unknown: treat as exenta
-                $exenta += $bruto;
+                $exenta += $monto_bruto;
             }
         }
 
         // insertar o actualizar libro_compra
-        // verificar si ya existe registro para la factura
         $check = $conexion->prepare("SELECT id_libro_compra FROM libro_compra WHERE id_factura_compra = :id LIMIT 1");
         $check->execute([':id' => $id_factura]);
         if ($row = $check->fetch(PDO::FETCH_ASSOC)) {
             $upd = $conexion->prepare("UPDATE libro_compra SET iva_5 = :iva5, exenta = :ex, iva_10 = :iva10 WHERE id_factura_compra = :id");
-            $upd->execute([':iva5' => $iva_5, ':ex' => $exenta, ':iva10' => $iva_10, ':id' => $id_factura]);
+            $upd->execute([':iva5' => round($iva_5, 2), ':ex' => round($exenta, 2), ':iva10' => round($iva_10, 2), ':id' => $id_factura]);
         } else {
             $ins = $conexion->prepare("INSERT INTO libro_compra (iva_5, exenta, iva_10, id_factura_compra) VALUES (:iva5, :ex, :iva10, :id)");
-            $ins->execute([':iva5' => $iva_5, ':ex' => $exenta, ':iva10' => $iva_10, ':id' => $id_factura]);
+            $ins->execute([':iva5' => round($iva_5, 2), ':ex' => round($exenta, 2), ':iva10' => round($iva_10, 2), ':id' => $id_factura]);
         }
 
-        echo json_encode(['success' => true, 'subtotal' => $subtotal, 'total_iva' => $total_iva, 'iva_5' => $iva_5, 'iva_10' => $iva_10, 'exenta' => $exenta]);
+        echo json_encode(['success' => true, 'subtotal' => round($subtotal, 2), 'total_iva' => round($total_iva, 2), 'iva_5' => round($iva_5, 2), 'iva_10' => round($iva_10, 2), 'exenta' => round($exenta, 2)]);
     } catch (PDOException $e) {
+        error_log("Error en generar_libro: " . $e->getMessage());
         echo json_encode(['error' => $e->getMessage()]);
     }
     exit;

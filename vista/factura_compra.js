@@ -228,6 +228,8 @@ function guardarFacturaCompra() {
         }
     });
 
+    console.log('Detalles a guardar:', detalles);
+
     if (detalles.length === 0) { mensaje_dialogo_info_ERROR('Debe agregar al menos un detalle','Atención'); return; }
 
     let cabecera = {
@@ -242,7 +244,11 @@ function guardarFacturaCompra() {
         estado: 'ACTIVO'
     };
 
+    console.log('Cabecera a guardar:', cabecera);
+
     let respRaw = ejecutarAjax('controladores/factura_compra.php', 'guardar=' + JSON.stringify(cabecera));
+    console.log('Respuesta de factura_compra.php:', respRaw);
+    
     let resp;
     try {
         if (typeof respRaw === 'string') {
@@ -264,16 +270,45 @@ function guardarFacturaCompra() {
     if (!resp || !resp.success || !resp.id_factura_compra) { mensaje_dialogo_info_ERROR((resp && resp.error) ? resp.error : 'Error al guardar factura','Error'); return; }
 
     let id_factura = resp.id_factura_compra;
+    console.log('Factura guardada con ID:', id_factura);
+    
     // guardar detalles
     for (let i=0;i<detalles.length;i++){
         let det = detalles[i];
         det.id_factura_compra = id_factura;
+        console.log('Guardando detalle:', det);
+        
         let rRaw = ejecutarAjax('controladores/detalle_factura.php', 'guardar=' + JSON.stringify(det));
+        console.log('Respuesta de detalle_factura.php:', rRaw);
+        
         try {
             let r = (typeof rRaw === 'string' && rRaw.trim().length) ? JSON.parse(rRaw) : rRaw;
-            // optionally handle r.error
+            console.log('Detalle procesado:', r);
+            if (r && r.error) {
+                console.error('Error al guardar detalle:', r.error);
+                mensaje_dialogo_info_ERROR('Error al guardar detalle: ' + r.error, 'Error');
+            }
         } catch (e) {
             console.error('Error parsing detalle_factura response:', rRaw, e);
+            mensaje_dialogo_info_ERROR('Error al procesar respuesta del detalle: ' + e.message, 'Error');
+        }
+    }
+
+    // Guardar cuotas si la condición es Crédito
+    let id_condicion = $("#factura_condicion").val();
+    let condicion_texto = $("#factura_condicion option:selected").text().toLowerCase();
+    if ((condicion_texto.indexOf('credito') !== -1 || id_condicion === '1') && $('#cuotas_tb tr').length > 0) {
+        let cuotas = obtenerCuotas();
+        for (let i = 0; i < cuotas.length; i++) {
+            let cuota = cuotas[i];
+            cuota.id_factura_compra = id_factura;
+            let cRaw = ejecutarAjax('controladores/cuenta_pagar.php', 'guardar=' + JSON.stringify(cuota));
+            try {
+                let c = (typeof cRaw === 'string' && cRaw.trim().length) ? JSON.parse(cRaw) : cRaw;
+                console.log('Cuota guardada:', c);
+            } catch (e) {
+                console.error('Error parsing cuenta_pagar response:', cRaw, e);
+            }
         }
     }
 
@@ -314,21 +349,29 @@ function cargarTablaFacturaCompras() {
         }
 
         if (!Array.isArray(json) || json.length === 0) {
-            fila = `<tr><td colspan='5' class='text-center'>No hay registros</td></tr>`;
+            fila = `<tr><td colspan='7' class='text-center text-muted'>No hay registros</td></tr>`;
         } else {
             json.forEach(function(item){
+                let estado_badge = `<span class="badge bg-label-${item.estado === 'ACTIVO' ? 'success' : 'danger'}">${item.estado || 'INACTIVO'}</span>`;
                 fila += `<tr>`;
                 fila += `<td>${item.id_factura_compra}</td>`;
                 fila += `<td>${item.numero_factura || ''}</td>`;
                 fila += `<td>${item.fecha_factura || ''}</td>`;
                 fila += `<td>${item.proveedor_nombre || ''}</td>`;
-                fila += `<td class='text-end'><button class='btn btn-info btn-sm ver-detalle-factura' data-id='${item.id_factura_compra}'><i data-feather="eye"></i></button></td>`;
+                fila += `<td>${estado_badge}</td>`;
+                fila += `<td>`;
+                fila += `<button class='btn btn-sm btn-info' onclick="verDetallesFactura(${item.id_factura_compra})"><i data-feather="eye"></i></button> `;
+                if (item.estado === 'ACTIVO') {
+                    fila += `<button class='btn btn-sm btn-danger' onclick="anularFactura(${item.id_factura_compra})"><i data-feather="x-circle"></i></button> `;
+                }
+                fila += `<button class='btn btn-sm btn-primary' onclick="imprimirFactura(${item.id_factura_compra})"><i data-feather="printer"></i></button>`;
+                fila += `</td>`;
                 fila += `</tr>`;
             });
         }
     } catch(e) {
         console.error(e);
-        fila = `<tr><td colspan='5' class='text-center text-danger'>Error al cargar registros</td></tr>`;
+        fila = `<tr><td colspan='7' class='text-center text-danger'>Error al cargar registros</td></tr>`;
     }
 
     $('#factura_compra_tb').html(fila);
@@ -347,3 +390,154 @@ $(document).on('click', '.ver-detalle-factura', function(){
         Swal.fire({ title: 'Detalles Factura #' + id, html: html, width: '800px' });
     } catch(e){ console.error(e); mensaje_dialogo_info_ERROR('Error al obtener detalles','Error'); }
 });
+
+function verDetallesFactura(id) {
+    console.log('Obteniendo detalles de factura:', id);
+    let detalles = ejecutarAjax('controladores/factura_compra.php', 'obtener_detalles=' + id);
+    console.log('Respuesta del servidor:', detalles);
+    
+    try {
+        let json = typeof detalles === 'string' ? JSON.parse(detalles) : detalles;
+        console.log('JSON parseado:', json);
+        
+        if (!Array.isArray(json)) {
+            json = [];
+        }
+        
+        if (json.length === 0) { 
+            mensaje_dialogo_info_ERROR('No hay detalles registrados para esta factura','Info'); 
+            return; 
+        }
+        
+        let html = '<table class="table table-sm"><thead><tr><th>Producto</th><th>Cantidad</th><th>Monto</th></tr></thead><tbody>';
+        json.forEach(function(it){ 
+            html += `<tr><td>${it.nombre_producto||''}</td><td>${it.cantidad||''}</td><td>$${parseFloat(it.monto_total).toFixed(2)}</td></tr>`; 
+        });
+        html += '</tbody></table>';
+        Swal.fire({ title: 'Detalles Factura #' + id, html: html, width: '800px' });
+    } catch(e){ 
+        console.error('Error al procesar detalles:', e); 
+        mensaje_dialogo_info_ERROR('Error al obtener detalles: ' + e.message,'Error'); 
+    }
+}
+
+function anularFactura(id) {
+    Swal.fire({
+        title: '¿Anular Factura?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, anular',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let respRaw = ejecutarAjax('controladores/factura_compra.php', 'actualizar=' + JSON.stringify({id_factura_compra: id, estado: 'INACTIVO'}));
+            try {
+                let resp = typeof respRaw === 'string' ? JSON.parse(respRaw) : respRaw;
+                if (resp && resp.success) {
+                    mensaje_confirmacion('Factura anulada correctamente','Éxito');
+                    cargarTablaFacturaCompras();
+                } else {
+                    mensaje_dialogo_info_ERROR(resp && resp.error ? resp.error : 'Error al anular','Error');
+                }
+            } catch(e) {
+                console.error('Error:', e);
+                mensaje_dialogo_info_ERROR('Error al procesar la solicitud','Error');
+            }
+        }
+    });
+}
+
+function imprimirFactura(id) {
+    // Abrir página de impresión en nueva ventana
+    window.open('paginas/movimientos/factura_compra/print.php?id=' + id, '_blank');
+}
+
+// Manejo del cambio de Condición de Pago
+$(document).on('change', '#factura_condicion', function(){
+    let id_condicion = $(this).val();
+    let condicion_texto = $(this).find('option:selected').text().toLowerCase();
+    
+    console.log('Condición seleccionada:', id_condicion, 'Texto:', condicion_texto);
+    
+    // Mostrar/ocultar sección de cuotas si es Crédito
+    if (condicion_texto.indexOf('credito') !== -1 || id_condicion === '1') {
+        $('#seccion_cuotas').slideDown();
+    } else {
+        $('#seccion_cuotas').slideUp();
+        // Limpiar cuotas si se cambia a Contado
+        $('#cuotas_tb').empty();
+    }
+});
+
+function generarCuotas() {
+    let total = parseFloat($('#fc_total').val()) || 0;
+    let num_cuotas = parseInt($('#num_cuotas').val()) || 1;
+    let dias_cuota = parseInt($('#dias_cuota').val()) || 30;
+    
+    if (total <= 0) {
+        mensaje_dialogo_info_ERROR('El total debe ser mayor a 0 para generar cuotas','Atención');
+        return;
+    }
+    
+    if (num_cuotas <= 0) {
+        mensaje_dialogo_info_ERROR('El número de cuotas debe ser mayor a 0','Atención');
+        return;
+    }
+    
+    let monto_cuota = parseFloat((total / num_cuotas).toFixed(2));
+    let fecha_inicio = new Date($('#factura_fecha').val());
+    
+    if (isNaN(fecha_inicio.getTime())) {
+        mensaje_dialogo_info_ERROR('Selecciona una fecha de factura válida','Atención');
+        return;
+    }
+    
+    // Limpiar tabla de cuotas
+    $('#cuotas_tb').empty();
+    
+    // Generar cuotas
+    let saldo_restante = total;
+    for (let i = 1; i <= num_cuotas; i++) {
+        let fecha_vencimiento = new Date(fecha_inicio);
+        fecha_vencimiento.setDate(fecha_vencimiento.getDate() + (dias_cuota * i));
+        let fecha_str = fecha_vencimiento.toISOString().split('T')[0];
+        
+        // Última cuota recibe el saldo restante
+        let monto = (i === num_cuotas) ? saldo_restante : monto_cuota;
+        saldo_restante -= monto;
+        
+        let fila = `<tr data-cuota="${i}" data-monto="${monto}" data-fecha="${fecha_str}">`;
+        fila += `<td>${i}</td>`;
+        fila += `<td>${fecha_str}</td>`;
+        fila += `<td>$${parseFloat(monto).toFixed(2)}</td>`;
+        fila += `<td class='text-center'><button class='btn btn-danger btn-sm eliminar-cuota' type="button"><i data-feather="trash-2"></i></button></td>`;
+        fila += `</tr>`;
+        
+        $('#cuotas_tb').append(fila);
+    }
+    
+    feather.replace();
+    console.log('Cuotas generadas:', num_cuotas, 'Monto por cuota:', monto_cuota, 'Total:', total);
+    mensaje_confirmacion('Cuotas generadas correctamente','Éxito');
+}
+
+$(document).on('click', '.eliminar-cuota', function(){
+    $(this).closest('tr').remove();
+    console.log('Cuota eliminada');
+});
+
+// Función auxiliar para obtener las cuotas antes de guardar
+function obtenerCuotas() {
+    let cuotas = [];
+    $('#cuotas_tb tr').each(function(){
+        let cuota = {
+            cuota: parseInt($(this).attr('data-cuota')),
+            monto: parseFloat($(this).attr('data-monto')),
+            fecha_vencimiento: $(this).attr('data-fecha')
+        };
+        cuotas.push(cuota);
+    });
+    return cuotas;
+}
+

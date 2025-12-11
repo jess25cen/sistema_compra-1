@@ -44,6 +44,38 @@ $ses_name = $_SESSION['nombre_completo'] ?? ($_SESSION['nombre_usuario'] ?? 'Usu
             </select>
         </div>
 
+        <!-- Sección de Cuotas (se muestra solo si es Crédito) -->
+        <div id="seccion_cuotas" style="display: none; width: 100%;">
+            <div class="col-md-12 mt-3"><hr></div>
+            <div class="col-md-12"><h5>Generador de Cuotas de Crédito</h5></div>
+            
+            <div class="col-md-3 mt-3">
+                <label>Número de Cuotas</label>
+                <input type="number" id="num_cuotas" class="form-control" value="1" min="1" max="24">
+            </div>
+            <div class="col-md-3 mt-3">
+                <label>Días entre Cuotas</label>
+                <input type="number" id="dias_cuota" class="form-control" value="30" min="1">
+            </div>
+            <div class="col-md-3 mt-3 d-flex align-items-end">
+                <button class="btn btn-info w-100" onclick="generarCuotas(); return false;">Generar Cuotas</button>
+            </div>
+
+            <div class="col-md-12 mt-3">
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Vencimiento</th>
+                            <th>Monto</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuotas_tb"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="col-md-12"><hr></div>
 
         <div class="col-md-4">

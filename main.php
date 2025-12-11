@@ -232,7 +232,7 @@
                   </a>
                 </li>
                 <li class="menu-item">
-                  <a href="#" onclick="mostrarListaNotaCreditoCompras(); return false;" class="menu-link">
+                  <a href="#" onclick="mostrarListaNotasCredito(); return false;" class="menu-link">
                     <div data-i18n="">Nota de Crédito Compra</div>
                   </a>
                 </li>
@@ -432,6 +432,7 @@
     <script src="vista/orden_compra.js"></script>
     <script src="vista/pedido_compra.js"></script>
     <script src="vista/factura_compra.js"></script>
+    <script src="vista/nota_credito.js"></script>
     <script src="vista/alumnos.js"></script>
     <script src="vista/informes.js"></script>
     <script src="vista/bachilleratos.js"></script>
