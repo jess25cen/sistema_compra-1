@@ -128,7 +128,7 @@ if (isset($_POST['obtener_por_id']) || isset($_GET['obtener_por_id'])) {
 if (isset($_POST['obtener_detalles']) || isset($_GET['obtener_detalles'])) {
     try {
         $id = $_POST['obtener_detalles'] ?? $_GET['obtener_detalles'];
-        $sql = "SELECT df.id_detalle_factura, df.cantidad, df.monto_total, df.id_productos, p.nombre_producto
+        $sql = "SELECT df.id_detalle_factura, df.cantidad, df.total, df.id_productos, p.nombre_producto
                 FROM detalle_factura df
                 LEFT JOIN productos p ON df.id_productos = p.id_productos
                 WHERE df.id_factura_compra = :id";
@@ -148,7 +148,7 @@ if (isset($_POST['generar_libro']) || isset($_GET['generar_libro'])) {
         $id_factura = $_POST['generar_libro'] ?? $_GET['generar_libro'];
         
         // Obtener detalles de la factura con el IVA del producto
-        $sql = "SELECT df.cantidad, df.monto_total, p.iva
+        $sql = "SELECT df.cantidad, df.total, p.iva
                 FROM detalle_factura df
                 LEFT JOIN productos p ON df.id_productos = p.id_productos
                 WHERE df.id_factura_compra = :id";
@@ -163,7 +163,7 @@ if (isset($_POST['generar_libro']) || isset($_GET['generar_libro'])) {
         $subtotal = 0.0;
 
         foreach ($rows as $r) {
-            $monto_total = floatval($r['monto_total'] ?? 0);
+            $monto_total = floatval($r['total'] ?? 0);
             $iva_valor = floatval($r['iva'] ?? 0);
             $rate = $iva_valor / 100.0;
 
@@ -282,7 +282,7 @@ if (isset($_GET['obtener_por_id']) || isset($_POST['obtener_por_id'])) {
 if (isset($_GET['obtener_detalles']) || isset($_POST['obtener_detalles'])) {
     try {
         $id = $_POST['obtener_detalles'] ?? $_GET['obtener_detalles'];
-        $sql = "SELECT df.id_detalle_factura, df.cantidad, df.total_bruto, df.total_iva, df.total_neto, df.monto_total, df.id_productos, p.nombre_producto
+        $sql = "SELECT df.id_detalle_factura, df.cantidad, df.total, df.total_iva, df.costo, df.id_productos, p.nombre_producto
                 FROM detalle_factura df
                 LEFT JOIN productos p ON df.id_productos = p.id_productos
                 WHERE df.id_factura_compra = :id";

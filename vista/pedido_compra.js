@@ -7,6 +7,11 @@ function mostrarListaPedidosCompra() {
 function mostrarAgregarPedidoCompra() {
     let contenido = dameContenido("paginas/movimientos/pedido_compra/agregar.php");
     $("#contenido-principal").html(contenido);
+    
+    // Establecer la fecha de hoy automáticamente
+    let hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha_pedido').value = hoy;
+    
     cargarListaProductosPedidoCompra();
 }
 
@@ -234,7 +239,11 @@ function anularPedido(id) {
 }
 
 function imprimirPedido(id) {
-    window.open(`paginas/movimientos/pedido_compra/print.php?id=${id}`, '_blank');
+    if (!id || id <= 0) {
+        mensaje_dialogo_info_ERROR("ID de pedido inválido", "Error");
+        return;
+    }
+    window.open(`paginas/movimientos/pedido_compra/print.php?id=${id}`, '_blank', 'width=900,height=700,menubar=yes,scrollbars=yes');
 }
 
 function buscarPedidoCompra() {

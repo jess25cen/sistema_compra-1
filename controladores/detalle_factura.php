@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 header('Content-Type: application/json; charset=utf-8');
 require_once '../conexion/db.php';
 
@@ -65,25 +65,26 @@ function guardar($lista) {
 
         error_log("detalle_factura.php - Cálculos: bruto=$total_bruto, iva=$total_iva, neto=$total_neto");
 
+        // Insertar usando las columnas correctas de la tabla (sin especificar id_detalle_factura para que use AUTO_INCREMENT)
         $query = $conexion->prepare(
-            "INSERT INTO detalle_factura (cantidad, total_bruto, total_iva, total_neto, tipo_pago, id_factura_compra, monto_total, id_productos)
-             VALUES (:cantidad, :total_bruto, :total_iva, :total_neto, :tipo_pago, :id_factura_compra, :monto_total, :id_productos);"
+            "INSERT INTO detalle_factura (cantidad, total, total_iva, condicion, id_factura_compra, costo, id_productos)
+             VALUES (:cantidad, :total, :total_iva, :condicion, :id_factura_compra, :costo, :id_productos)"
         );
 
         $resultado = $query->execute([
             'cantidad' => $cantidad,
-            'total_bruto' => $total_bruto,
+            'total' => $total_neto,  // El total incluye IVA
             'total_iva' => $total_iva,
-            'total_neto' => $total_neto,
-            'tipo_pago' => $json_datos['tipo_pago'] ?? null,
+            'condicion' => $json_datos['condicion'] ?? 0,
             'id_factura_compra' => $id_factura,
-            'monto_total' => $total_neto,
+            'costo' => $unit,  // Precio unitario
             'id_productos' => $idProd,
         ]);
 
         if ($resultado) {
-            error_log("detalle_factura.php - Detalle guardado exitosamente");
-            echo json_encode(['success' => true, 'message' => 'Detalle guardado correctamente']);
+            $id_generado = $conexion->lastInsertId();
+            error_log("detalle_factura.php - Detalle guardado exitosamente con ID: $id_generado");
+            echo json_encode(['success' => true, 'id_detalle_factura' => $id_generado, 'message' => 'Detalle guardado correctamente']);
         } else {
             error_log("detalle_factura.php - Error al insertar el detalle");
             echo json_encode(['error' => 'Error al insertar el detalle']);
@@ -99,25 +100,48 @@ function guardar($lista) {
 }
 
 function obtener_detalles($id_factura) {
-    $base_datos = new DB();
-    
-    error_log("detalle_factura.php obtener_detalles - id_factura: $id_factura");
-    
-    $query = $base_datos->conectar()->prepare(
-        "SELECT df.id_detalle_factura, df.cantidad, df.id_factura_compra, df.id_productos, p.nombre_producto, df.monto_total
-         FROM detalle_factura df
-         LEFT JOIN productos p ON df.id_productos = p.id_productos
-         WHERE df.id_factura_compra = :id;"
-    );
-    $query->execute(['id' => $id_factura]);
-    $res = $query->fetchAll(PDO::FETCH_ASSOC);
-    
-    error_log("detalle_factura.php obtener_detalles - Registros encontrados: " . count($res));
-    error_log("detalle_factura.php obtener_detalles - Resultado: " . print_r($res, true));
-    
-    echo json_encode($res ?: array());
+    try {
+        $base_datos = new DB();
+        $conexion = $base_datos->conectar();
+        
+        // Convertir a entero para seguridad
+        $id_factura = intval($id_factura);
+        
+        error_log("detalle_factura.php obtener_detalles - id_factura: $id_factura (type: " . gettype($id_factura) . ")");
+        
+        if ($id_factura <= 0) {
+            error_log("detalle_factura.php obtener_detalles - ID inválido");
+            echo json_encode(['error' => 'ID de factura inválido']);
+            return;
+        }
+        
+        $sql = "SELECT df.id_detalle_factura, df.cantidad, df.id_factura_compra, df.id_productos, 
+                       p.nombre_producto, df.total, df.total_iva, df.costo
+                FROM detalle_factura df
+                LEFT JOIN productos p ON df.id_productos = p.id_productos
+                WHERE df.id_factura_compra = :id";
+        
+        error_log("detalle_factura.php obtener_detalles - SQL: $sql");
+        
+        $query = $conexion->prepare($sql);
+        $query->execute(['id' => $id_factura]);
+        $res = $query->fetchAll(PDO::FETCH_ASSOC);
+        
+        error_log("detalle_factura.php obtener_detalles - Registros encontrados: " . count($res));
+        
+        if (count($res) > 0) {
+            error_log("detalle_factura.php obtener_detalles - Resultado: " . print_r($res, true));
+        }
+        
+        echo json_encode($res ?: array());
+        
+    } catch (Exception $e) {
+        error_log("detalle_factura.php obtener_detalles - Error: " . $e->getMessage());
+        echo json_encode(['error' => $e->getMessage()]);
+    }
 }
-?>function eliminar($id_detalle) {
+
+function eliminar($id_detalle) {
     $base_datos = new DB();
     $query = $base_datos->conectar()->prepare(
         "DELETE FROM detalle_factura WHERE id_detalle_factura = :id;"
@@ -125,4 +149,3 @@ function obtener_detalles($id_factura) {
     $query->execute(['id' => $id_detalle]);
     echo json_encode(['success' => 'Detalle eliminado correctamente']);
 }
-?>

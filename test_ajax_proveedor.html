@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Proveedores</title>
+</head>
+<body>
+    <h1>Test de Carga de Proveedores</h1>
+    <button onclick="testProveedores()">Cargar Proveedores</button>
+    <div id="resultado"></div>
+
+    <script src="assets/vendor/jquery/jquery.js"></script>
+    <script>
+        function ejecutarAjax(url, parametros) {
+            let resultado = '';
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: parametros,
+                async: false,
+                success: function(respuesta) {
+                    console.log('AJAX Success:', respuesta);
+                    resultado = respuesta;
+                },
+                error: function(xhr, status, error) {
+                    console.log('AJAX Error:', error, xhr.responseText);
+                    resultado = 'ERROR: ' + error;
+                }
+            });
+            return resultado;
+        }
+
+        function testProveedores() {
+            console.log('=== TEST AJAX PROVEEDORES ===');
+            let respuesta = ejecutarAjax("controladores/proveedor.php", "listar=1");
+            console.log('Respuesta RAW:', respuesta);
+            console.log('Tipo:', typeof respuesta);
+            
+            document.getElementById('resultado').innerHTML = '<pre>' + JSON.stringify(respuesta, null, 2) + '</pre>';
+        }
+    </script>
+</body>
+</html>

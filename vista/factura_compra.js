@@ -224,7 +224,7 @@ function guardarFacturaCompra() {
         let cant = $(this).find('.producto_cantidad').val();
         let precio = $(this).find('.producto_precio').val() || 0;
         if (idp && cant) {
-            detalles.push({ id_productos: idp, cantidad: cant, precio_unitario: parseFloat(precio), monto_total: (parseFloat(precio) * parseFloat(cant)) });
+            detalles.push({ id_productos: idp, cantidad: cant, precio_unitario: parseFloat(precio), total: (parseFloat(precio) * parseFloat(cant)) });
         }
     });
 
@@ -298,16 +298,18 @@ function guardarFacturaCompra() {
     let id_condicion = $("#factura_condicion").val();
     let condicion_texto = $("#factura_condicion option:selected").text().toLowerCase();
     if ((condicion_texto.indexOf('credito') !== -1 || id_condicion === '1') && $('#cuotas_tb tr').length > 0) {
+        console.log('Intentando guardar cuotas (nota: cuenta_pagar.php aún no existe)');
         let cuotas = obtenerCuotas();
         for (let i = 0; i < cuotas.length; i++) {
             let cuota = cuotas[i];
             cuota.id_factura_compra = id_factura;
-            let cRaw = ejecutarAjax('controladores/cuenta_pagar.php', 'guardar=' + JSON.stringify(cuota));
+            // TODO: Crear controlador cuenta_pagar.php
+            // let cRaw = ejecutarAjax('controladores/cuenta_pagar.php', 'guardar=' + JSON.stringify(cuota));
             try {
-                let c = (typeof cRaw === 'string' && cRaw.trim().length) ? JSON.parse(cRaw) : cRaw;
-                console.log('Cuota guardada:', c);
+                // let c = (typeof cRaw === 'string' && cRaw.trim().length) ? JSON.parse(cRaw) : cRaw;
+                console.log('Cuota a guardar (pendiente controlador):', cuota);
             } catch (e) {
-                console.error('Error parsing cuenta_pagar response:', cRaw, e);
+                console.error('Error:', e);
             }
         }
     }
@@ -385,7 +387,7 @@ $(document).on('click', '.ver-detalle-factura', function(){
         let json = typeof detalles === 'string' ? JSON.parse(detalles) : detalles;
         if (!Array.isArray(json) || json.length === 0) { mensaje_dialogo_info_ERROR('No hay detalles','Info'); return; }
         let html = '<table class="table table-sm"><thead><tr><th>Producto</th><th>Cantidad</th><th>Monto</th></tr></thead><tbody>';
-        json.forEach(function(it){ html += `<tr><td>${it.nombre_producto||''}</td><td>${it.cantidad||''}</td><td>${it.monto_total||''}</td></tr>`; });
+        json.forEach(function(it){ html += `<tr><td>${it.nombre_producto||''}</td><td>${it.cantidad||''}</td><td>${it.total||''}</td></tr>`; });
         html += '</tbody></table>';
         Swal.fire({ title: 'Detalles Factura #' + id, html: html, width: '800px' });
     } catch(e){ console.error(e); mensaje_dialogo_info_ERROR('Error al obtener detalles','Error'); }
@@ -411,7 +413,7 @@ function verDetallesFactura(id) {
         
         let html = '<table class="table table-sm"><thead><tr><th>Producto</th><th>Cantidad</th><th>Monto</th></tr></thead><tbody>';
         json.forEach(function(it){ 
-            html += `<tr><td>${it.nombre_producto||''}</td><td>${it.cantidad||''}</td><td>$${parseFloat(it.monto_total).toFixed(2)}</td></tr>`; 
+            html += `<tr><td>${it.nombre_producto||''}</td><td>${it.cantidad||''}</td><td>$${parseFloat(it.total).toFixed(2)}</td></tr>`; 
         });
         html += '</tbody></table>';
         Swal.fire({ title: 'Detalles Factura #' + id, html: html, width: '800px' });
@@ -449,8 +451,11 @@ function anularFactura(id) {
 }
 
 function imprimirFactura(id) {
-    // Abrir página de impresión en nueva ventana
-    window.open('paginas/movimientos/factura_compra/print.php?id=' + id, '_blank');
+    if (!id || id <= 0) {
+        mensaje_dialogo_info_ERROR("ID de factura inválido", "Error");
+        return;
+    }
+    window.open(`paginas/movimientos/factura_compra/print.php?id=${id}`, '_blank', 'width=900,height=700,menubar=yes,scrollbars=yes');
 }
 
 // Manejo del cambio de Condición de Pago
@@ -473,7 +478,7 @@ $(document).on('change', '#factura_condicion', function(){
 function generarCuotas() {
     let total = parseFloat($('#fc_total').val()) || 0;
     let num_cuotas = parseInt($('#num_cuotas').val()) || 1;
-    let dias_cuota = parseInt($('#dias_cuota').val()) || 30;
+    let dias_cuota = 30; // Valor fijo de 30 días entre cuotas
     
     if (total <= 0) {
         mensaje_dialogo_info_ERROR('El total debe ser mayor a 0 para generar cuotas','Atención');

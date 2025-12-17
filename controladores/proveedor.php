@@ -34,14 +34,16 @@ function listar() {
     $query = $base_datos->conectar()->prepare(
         "SELECT id_proveedor, nombre, apellido, razon_social, telefono, ruc, email, direccion, id_ciudad, estado
            FROM proveedor
-       ORDER BY id_proveedor DESC;"
+       ORDER BY nombre, apellido ASC;"
     );
     $query->execute();
     if ($query->rowCount()) {
-        print_r(json_encode($query->fetchAll(PDO::FETCH_OBJ)));
+        echo json_encode($query->fetchAll(PDO::FETCH_OBJ));
     } else {
-        echo '0';
+        // Devolver array vacío válido
+        echo json_encode(array());
     }
+    exit;
 }
 
 function guardar($lista) {

@@ -1,5 +1,9 @@
 <?php
+header('Content-Type: application/json');
 require_once '../conexion/db.php';
+
+$db = new DB();
+$conexion = $db->conectar();
 
 $accion = $_POST['accion'] ?? '';
 
@@ -21,24 +25,24 @@ switch ($accion) {
 }
 
 function listar() {
-    global $pdo;
+    global $conexion;
     try {
         $buscar = $_POST['buscar'] ?? '';
         
         $sql = "SELECT nc.id_nota_credito, nc.numero_nota, nc.fecha_nota, nc.monto_total, nc.estado,
-                        p.nombre_proveedor, fc.numero_factura
+                        p.nombre AS proveedor_nombre, fc.numero_factura
                 FROM nota_credito nc
                 LEFT JOIN proveedor p ON nc.id_proveedor = p.id_proveedor
                 LEFT JOIN factura_compra fc ON nc.id_factura_compra = fc.id_factura_compra
                 WHERE nc.estado != 'ELIMINADO'";
         
         if (!empty($buscar)) {
-            $sql .= " AND (nc.numero_nota LIKE :buscar OR p.nombre_proveedor LIKE :buscar OR fc.numero_factura LIKE :buscar)";
+            $sql .= " AND (nc.numero_nota LIKE :buscar OR p.nombre LIKE :buscar OR fc.numero_factura LIKE :buscar)";
         }
         
         $sql .= " ORDER BY nc.fecha_nota DESC";
         
-        $stmt = $pdo->prepare($sql);
+        $stmt = $conexion->prepare($sql);
         if (!empty($buscar)) {
             $stmt->execute([':buscar' => '%' . $buscar . '%']);
         } else {
@@ -55,7 +59,7 @@ function listar() {
 }
 
 function guardar() {
-    global $pdo;
+    global $conexion;
     try {
         $numero_nota = $_POST['numero_nota'] ?? '';
         $fecha_nota = $_POST['fecha_nota'] ?? date('Y-m-d');
@@ -69,17 +73,17 @@ function guardar() {
         
         error_log("nota_credito.php - guardar(): numero=$numero_nota, fecha=$fecha_nota, id_factura=$id_factura_compra, detalles=".count($detalles));
         
-        $pdo->beginTransaction();
+        $conexion->beginTransaction();
         
         // Insertar cabecera
         $sql_nc = "INSERT INTO nota_credito 
                    (numero_nota, fecha_nota, id_factura_compra, id_proveedor, motivo, observaciones, monto_total, estado, id_usuario, fecha_creacion)
                    VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVO', ?, NOW())";
         
-        $stmt = $pdo->prepare($sql_nc);
+        $stmt = $conexion->prepare($sql_nc);
         $stmt->execute([$numero_nota, $fecha_nota, $id_factura_compra, $id_proveedor, $motivo, $observaciones, $monto_total, $id_usuario]);
         
-        $id_nota_credito = $pdo->lastInsertId();
+        $id_nota_credito = $conexion->lastInsertId();
         error_log("nota_credito.php - Nota creada con ID: $id_nota_credito");
         
         // Insertar detalles
@@ -87,7 +91,7 @@ function guardar() {
                     (id_nota_credito, id_productos, cantidad, precio_unitario, total)
                     VALUES (?, ?, ?, ?, ?)";
         
-        $stmt_det = $pdo->prepare($sql_det);
+        $stmt_det = $conexion->prepare($sql_det);
         foreach ($detalles as $d) {
             $id_prod = $d['id_productos'] ?? 0;
             $cantidad = floatval($d['cantidad'] ?? 0);
@@ -99,30 +103,30 @@ function guardar() {
             $stmt_det->execute([$id_nota_credito, $id_prod, $cantidad, $precio_unit, $total]);
         }
         
-        $pdo->commit();
+        $conexion->commit();
         
         echo json_encode(['success' => true, 'id_nota_credito' => $id_nota_credito]);
         
     } catch (Exception $e) {
-        $pdo->rollBack();
+        $conexion->rollBack();
         error_log('nota_credito.php - guardar(): ' . $e->getMessage());
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 }
 
 function obtener_detalles() {
-    global $pdo;
+    global $conexion;
     try {
         $id_nota = $_POST['id_nota_credito'] ?? 0;
         
         // Obtener cabecera
-        $sql_cabecera = "SELECT nc.*, p.nombre_proveedor, fc.numero_factura
+        $sql_cabecera = "SELECT nc.*, p.nombre AS proveedor_nombre, fc.numero_factura
                          FROM nota_credito nc
                          LEFT JOIN proveedor p ON nc.id_proveedor = p.id_proveedor
                          LEFT JOIN factura_compra fc ON nc.id_factura_compra = fc.id_factura_compra
                          WHERE nc.id_nota_credito = ?";
         
-        $stmt = $pdo->prepare($sql_cabecera);
+        $stmt = $conexion->prepare($sql_cabecera);
         $stmt->execute([$id_nota]);
         $cabecera = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -132,7 +136,7 @@ function obtener_detalles() {
                          LEFT JOIN productos prod ON dnc.id_productos = prod.id_productos
                          WHERE dnc.id_nota_credito = ?";
         
-        $stmt_det = $pdo->prepare($sql_detalles);
+        $stmt_det = $conexion->prepare($sql_detalles);
         $stmt_det->execute([$id_nota]);
         $detalles = $stmt_det->fetchAll(PDO::FETCH_ASSOC);
         
@@ -145,13 +149,13 @@ function obtener_detalles() {
 }
 
 function actualizar() {
-    global $pdo;
+    global $conexion;
     try {
         $id_nota = $_POST['id_nota_credito'] ?? 0;
         $estado = $_POST['estado'] ?? 'ACTIVO';
         
         $sql = "UPDATE nota_credito SET estado = ? WHERE id_nota_credito = ?";
-        $stmt = $pdo->prepare($sql);
+        $stmt = $conexion->prepare($sql);
         $stmt->execute([$estado, $id_nota]);
         
         error_log("nota_credito.php - actualizar(): id_nota=$id_nota, estado=$estado");

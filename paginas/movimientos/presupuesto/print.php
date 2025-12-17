@@ -1,5 +1,5 @@
 <?php
-require_once("../../conexion/db.php");
+require_once("../../../conexion/db.php");
 
 $db = new DB();
 $conexion = $db->conectar();
@@ -7,20 +7,20 @@ $conexion = $db->conectar();
 $id = isset($_GET['id']) ? $_GET['id'] : 0;
 
 if ($id == 0) {
-    echo "No se especificó un presupuesto";
+    echo '<div style="padding: 20px; text-align: center;"><p style="color: red; font-size: 18px;">No se especificó un presupuesto</p></div>';
     exit;
 }
 
 // Obtener datos del presupuesto
 $sql = "SELECT 
         p.id_presupuesto, 
-        p.fecha, 
+        p.fecha_presupuesto, 
         p.estado,
-        u.nombre AS nombre_usuario,
-        pr.nombre AS nombre_proveedor,
-        p.id_orden_compra
+        u.nombre_usuario,
+        CONCAT(pr.nombre, ' ', pr.apellido) AS nombre_proveedor,
+        p.pedido_compra
     FROM presupuesto p
-    JOIN usuarios u ON p.id_usuario = u.id_usuarios
+    JOIN usuarios u ON p.id_usuario = u.id_usuario
     JOIN proveedor pr ON p.id_proveedor = pr.id_proveedor
     WHERE p.id_presupuesto = :id";
 
@@ -29,17 +29,17 @@ $stmt->execute([':id' => $id]);
 $presupuesto = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$presupuesto) {
-    echo "Presupuesto no encontrado";
+    echo '<div style="padding: 20px; text-align: center;"><p style="color: red; font-size: 18px;">El presupuesto con ID ' . htmlspecialchars($id) . ' no existe.</p></div>';
     exit;
 }
 
 // Obtener detalles
 $sql = "SELECT 
         dp.id_productos,
-        p.nombre AS nombre_producto,
+        p.nombre_producto,
+        p.precio,
         dp.cantidad,
-        dp.precio_unitario,
-        dp.subtotal
+        (dp.cantidad * p.precio) AS subtotal
     FROM detalle_presupuesto dp
     JOIN productos p ON dp.id_productos = p.id_productos
     WHERE dp.id_presupuesto = :id";
@@ -75,7 +75,7 @@ foreach ($detalles as $detalle) {
     </div>
 
     <div class="info-row">
-        <strong>Fecha:</strong> <?php echo date('d/m/Y', strtotime($presupuesto['fecha'])); ?>
+        <strong>Fecha:</strong> <?php echo date('d/m/Y', strtotime($presupuesto['fecha_presupuesto'])); ?>
     </div>
     <div class="info-row">
         <strong>Usuario:</strong> <?php echo $presupuesto['nombre_usuario']; ?>
@@ -86,9 +86,9 @@ foreach ($detalles as $detalle) {
     <div class="info-row">
         <strong>Estado:</strong> <?php echo $presupuesto['estado']; ?>
     </div>
-    <?php if ($presupuesto['id_orden_compra']): ?>
+    <?php if ($presupuesto['pedido_compra']): ?>
     <div class="info-row">
-        <strong>Orden de Compra:</strong> <?php echo $presupuesto['id_orden_compra']; ?>
+        <strong>Pedido de Compra:</strong> <?php echo $presupuesto['pedido_compra']; ?>
     </div>
     <?php endif; ?>
 
@@ -106,7 +106,7 @@ foreach ($detalles as $detalle) {
             <tr>
                 <td><?php echo $detalle['nombre_producto']; ?></td>
                 <td><?php echo $detalle['cantidad']; ?></td>
-                <td><?php echo number_format($detalle['precio_unitario'], 2); ?></td>
+                <td><?php echo number_format($detalle['precio'], 2); ?></td>
                 <td><?php echo number_format($detalle['subtotal'], 2); ?></td>
             </tr>
             <?php endforeach; ?>

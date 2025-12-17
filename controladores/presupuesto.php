@@ -48,13 +48,15 @@ if (isset($_GET['guardar']) || isset($_POST['guardar'])) {
             ':estado' => $datos['estado'] ?? 'ACTIVO'
         ];
 
-        if (isset($datos['pedido_compra']) && $datos['pedido_compra'] !== '') {
+        // Si pedido_compra es 0 o está vacío, no incluirlo en el INSERT (quedará NULL)
+        if (isset($datos['pedido_compra']) && $datos['pedido_compra'] !== '' && $datos['pedido_compra'] !== 0 && $datos['pedido_compra'] !== '0') {
             $cols[] = 'pedido_compra';
             $placeholders[] = ':pedido_compra';
             $params[':pedido_compra'] = $datos['pedido_compra'];
         }
 
-        if (isset($datos['id_proveedor']) && $datos['id_proveedor'] !== '') {
+        // Si id_proveedor es 0 o está vacío, no incluirlo en el INSERT (quedará NULL)
+        if (isset($datos['id_proveedor']) && $datos['id_proveedor'] !== '' && $datos['id_proveedor'] !== 0 && $datos['id_proveedor'] !== '0') {
             $cols[] = 'id_proveedor';
             $placeholders[] = ':id_proveedor';
             $params[':id_proveedor'] = $datos['id_proveedor'];

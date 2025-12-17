@@ -81,12 +81,8 @@ $ses_id = $_SESSION['id_usuario'] ?? 1;
 
         <div class="col-md-12 mt-2">
             <div class="row g-2">
-                <div class="col-md-2"><label>SUBTOTAL</label><input type="text" id="nc_subtotal" class="form-control" readonly></div>
-                <div class="col-md-2"><label>IVA 5%</label><input type="text" id="nc_iva5" class="form-control" readonly></div>
-                <div class="col-md-2"><label>IVA 10%</label><input type="text" id="nc_iva10" class="form-control" readonly></div>
-                <div class="col-md-2"><label>EXENTA</label><input type="text" id="nc_exenta" class="form-control" readonly></div>
-                <div class="col-md-2"><label>TOTAL IVA</label><input type="text" id="nc_total_iva" class="form-control" readonly></div>
-                <div class="col-md-2"><label>TOTAL</label><input type="text" id="nc_total" class="form-control" readonly></div>
+                <div class="col-md-3"><label>SUBTOTAL</label><input type="text" id="nc_subtotal" class="form-control" readonly></div>
+                <div class="col-md-3"><label>TOTAL</label><input type="text" id="nc_total" class="form-control" readonly></div>
             </div>
         </div>
 

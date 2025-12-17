@@ -386,11 +386,11 @@ $(document).on("click", ".anular-orden", function () {
 
 $(document).on("click", ".imprimir-orden", function () {
     let id = $(this).data("id");
-    if (!id) {
-        mensaje_dialogo_info_ERROR("Debes seleccionar una orden para imprimir", "Atención");
+    if (!id || id <= 0) {
+        mensaje_dialogo_info_ERROR("ID de orden inválido", "Error");
         return;
     }
-    window.open("paginas/movimientos/orden_compra/print.php?id=" + id, "_blank");
+    window.open(`paginas/movimientos/orden_compra/print.php?id=${id}`, '_blank', 'width=900,height=700,menubar=yes,scrollbars=yes');
 });
 
 function cancelarOrdenCompra() {

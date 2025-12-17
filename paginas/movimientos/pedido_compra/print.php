@@ -9,17 +9,22 @@ $sql = "SELECT
         pc.pedido_compra, 
         pc.fecha_compra, 
         pc.estado,
-        u.nombre AS nombre_usuario,
-        u.nickname
+        u.nombre_usuario
     FROM pedido_compra pc
-    JOIN usuarios u ON pc.id_usuario = u.id_usuarios
+    JOIN usuarios u ON pc.id_usuario = u.id_usuario
     WHERE pc.pedido_compra = :id";
 
 $stmt = $conexion->prepare($sql);
 $stmt->execute([':id' => $id_pedido]);
 $pedido = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$sql_detalles = "SELECT dp.*, p.nombre AS nombre_producto, p.precio 
+// Verificar si el pedido existe
+if (!$pedido) {
+    echo '<div style="padding: 20px; text-align: center;"><p style="color: red; font-size: 18px;">El pedido con ID ' . htmlspecialchars($id_pedido) . ' no existe.</p></div>';
+    exit;
+}
+
+$sql_detalles = "SELECT dp.*, p.nombre_producto, p.precio 
                 FROM detalle_pedido dp 
                 LEFT JOIN productos p ON dp.id_productos = p.id_productos 
                 WHERE dp.pedido_compra = :id";
@@ -59,7 +64,6 @@ $detalles = $stmt_detalles->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="info-row">
         <div><strong>Usuario:</strong> <?php echo $pedido['nombre_usuario']; ?></div>
-        <div><strong>Nick:</strong> <?php echo $pedido['nickname']; ?></div>
     </div>
 
     <h3>Detalles</h3>

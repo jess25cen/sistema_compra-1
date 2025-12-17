@@ -344,10 +344,14 @@ function ejecutarAjax(url, data) {
         url: url,
         data: data,
         success: function (datos) {
-            //                console.log(datos);
-
+            //console.log(datos);
             resultado = datos;
         },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error en ' + url, status, error);
+            console.error('Response:', xhr.responseText);
+            resultado = xhr.responseText || 'Error: ' + error;
+        }
     });
 
     return resultado;

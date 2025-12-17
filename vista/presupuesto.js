@@ -5,19 +5,28 @@ function mostrarListaPresupuestos() {
 }
 
 function mostrarAgregarPresupuesto() {
+    console.log('=== INICIANDO mostrarAgregarPresupuesto ===');
     let contenido = dameContenido("paginas/movimientos/presupuesto/agregar.php");
     $("#contenido-principal").html(contenido);
+    console.log('HTML cargado');
     
     // Establecer fecha de hoy
     let hoy = new Date().toISOString().split('T')[0];
     $("#presupuesto_fecha").val(hoy);
+    console.log('Fecha establecida:', hoy);
     
-    cargarListaPedidosCompra();
-    cargarListaProveedores();
-    cargarListaProductosPresupuesto();
+    // Pequeño delay para asegurar que el DOM esté completamente listo
+    setTimeout(function() {
+        console.log('>>> Ejecutando cargas con setTimeout');
+        cargarListaPedidosCompra();
+        cargarListaProveedoresPresupuesto();
+        cargarListaProductosPresupuesto();
+        console.log('>>> Cargas completadas');
+    }, 100);
 }
 
 function cargarListaPedidosCompra() {
+    console.log('>>> INICIANDO cargarListaPedidosCompra');
     let pedidos = ejecutarAjax("controladores/pedido_compra.php", "listar=1");
     
     try {
@@ -34,34 +43,77 @@ function cargarListaPedidosCompra() {
         json_pedidos.forEach(function(item) {
             $("#presupuesto_pedido_compra").append(`<option value="${item.pedido_compra}">Pedido #${item.pedido_compra} - ${item.fecha_compra}</option>`);
         });
+        console.log('✓ Pedidos cargados:', json_pedidos.length);
     } catch (error) {
         console.error('Error al cargar pedidos compra:', error);
     }
 }
 
-function cargarListaProveedores() {
+function cargarListaProveedoresPresupuesto() {
+    console.log('>>> Iniciando cargarListaProveedoresPresupuesto');
+    
+    // Verificar que el elemento existe
+    let select = $("#presupuesto_proveedor");
+    if (select.length === 0) {
+        console.error('ERROR: No se encontró el elemento #presupuesto_proveedor');
+        return;
+    }
+    
     let proveedores = ejecutarAjax("controladores/proveedor.php", "listar=1");
     
+    console.log('Respuesta proveedor RAW:', proveedores);
+    console.log('Tipo de dato:', typeof proveedores);
+    console.log('Longitud:', proveedores ? proveedores.length : 'undefined');
+    
     try {
+        // Si es "0" significa tabla vacía
+        if (proveedores === '0' || proveedores === 0) {
+            console.warn('La tabla proveedor está vacía o sin resultados');
+            select.find("option:not(:first)").remove();
+            return;
+        }
+        
         // Manejar tanto strings JSON como objetos ya parseados
-        let json_proveedores = typeof proveedores === 'string' ? JSON.parse(proveedores) : proveedores;
+        let json_proveedores;
+        if (typeof proveedores === 'string') {
+            console.log('Parseando JSON string...');
+            json_proveedores = JSON.parse(proveedores);
+        } else {
+            json_proveedores = proveedores;
+        }
+        
+        console.log('Proveedores parseados:', json_proveedores);
+        console.log('¿Es array?', Array.isArray(json_proveedores));
         
         if (!Array.isArray(json_proveedores)) {
+            console.warn('json_proveedores no es un array, es:', typeof json_proveedores);
             json_proveedores = [];
         }
         
         // Limpiar opciones previas excepto la opción por defecto
-        $("#presupuesto_proveedor").find("option:not(:first)").remove();
+        select.find("option:not(:first)").remove();
+        
+        console.log('Total proveedores a agregar:', json_proveedores.length);
         
         json_proveedores.forEach(function(item) {
-            $("#presupuesto_proveedor").append(`<option value="${item.id_proveedor}">${item.nombre}</option>`);
+            console.log('Agregando proveedor ID:', item.id_proveedor, 'Nombre:', item.nombre, 'Apellido:', item.apellido);
+            select.append(`<option value="${item.id_proveedor}">${item.nombre} ${item.apellido || ''}</option>`);
         });
+        
+        if (json_proveedores.length === 0) {
+            console.warn('No hay proveedores para mostrar');
+        } else {
+            console.log('✓ Proveedores cargados exitosamente. Total:', json_proveedores.length);
+        }
     } catch (error) {
         console.error('Error al cargar proveedores:', error);
+        console.error('Stack:', error.stack);
+        console.error('Valor que causó error:', proveedores);
     }
 }
 
 function cargarListaProductosPresupuesto() {
+    console.log('>>> INICIANDO cargarListaProductosPresupuesto');
     let productos = ejecutarAjax("controladores/producto.php", "listar=1");
     
     try {
@@ -78,6 +130,7 @@ function cargarListaProductosPresupuesto() {
         json_productos.forEach(function(item) {
             $("#presupuesto_producto").append(`<option value="${item.id_productos}">${item.nombre_producto}</option>`);
         });
+        console.log('✓ Productos cargados:', json_productos.length);
     } catch (error) {
         console.error('Error al cargar productos:', error);
     }
@@ -348,11 +401,11 @@ function anularPresupuesto(id) {
 }
 
 function imprimirPresupuesto(id) {
-    if (!id) {
-        mensaje_dialogo_info_ERROR("Debes seleccionar un presupuesto para imprimir", "Atención");
+    if (!id || id <= 0) {
+        mensaje_dialogo_info_ERROR("ID de presupuesto inválido", "Error");
         return;
     }
-    window.open("paginas/movimientos/presupuesto/print.php?id=" + id, "_blank");
+    window.open(`paginas/movimientos/presupuesto/print.php?id=${id}`, '_blank', 'width=900,height=700,menubar=yes,scrollbars=yes');
 }
 
 function cancelarPresupuestoCompra() {
