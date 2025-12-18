@@ -236,6 +236,11 @@
                     <div data-i18n="">Nota de Crédito Compra</div>
                   </a>
                 </li>
+                <li class="menu-item">
+                  <a href="#" onclick="mostrarInformeMovimientos(); return false;" class="menu-link">
+                    <div data-i18n="">Informe de Movimientos</div>
+                  </a>
+                </li>
               </ul>
             </li>
           </ul>

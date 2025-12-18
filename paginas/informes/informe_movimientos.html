@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Informe de Movimientos</title>
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #formInforme {
+            max-width: 600px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>INFORME DE MOVIMIENTOS</h2>
+
+    <form id="formInforme">
+
+        <div class="form-group">
+            <label for="movimiento">Movimiento:</label>
+            <select id="movimiento" name="movimiento">
+                <option value="">Seleccione</option>
+                <option value="pedido_compra">Pedido Compra</option>
+                <option value="presupuesto_compra">Presupuesto Compra</option>
+                <option value="orden_compra">Orden de Compra</option>
+                <option value="factura_compra">Factura Compra</option>
+                <option value="nota_credito_compra">Nota de Credito Compra</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="especificacion">Especificación:</label>
+            <input type="text" id="especificacion" name="especificacion">
+        </div>
+
+        <div class="form-group">
+            <label for="desde">Desde:</label>
+            <input type="date" id="desde" name="desde">
+        </div>
+
+        <div class="form-group">
+            <label for="hasta">Hasta:</label>
+            <input type="date" id="hasta" name="hasta">
+        </div>
+
+        <button type="button" id="btnGenerarInforme">Generar</button>
+
+    </form>
+
+    <div id="resultados-informe"></div>
+
+</body>
+</html>
